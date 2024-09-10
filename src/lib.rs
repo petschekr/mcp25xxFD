@@ -1,51 +1,6 @@
-//! `no_std` library for the MCP2510, MCP2515 and MCP25625 CAN controller chips.
-//!
-//! API is implemented in terms of of the [`embedded_hal`] and [`embedded_can`] traits.
-//!
-//! Activating the `mcp2515` or `mcp25625` feature will enable
-//! additional registers and instructions the MCP2510 does not support.
-//!
-//! # Example
-//!
-//! ```
-//! use embedded_can::nb::Can;
-//! use embedded_can::{Frame, StandardId};
-//! use mcp25xx::bitrates::clock_16mhz::CNF_500K_BPS;
-//! # use mcp25xx::doctesthelper::NoOpSPI;
-//! use mcp25xx::registers::{OperationMode, RXB0CTRL, RXM};
-//! use mcp25xx::{CanFrame, Config, MCP25xx};
-//!
-//! # let spi = NoOpSPI;
-//! #
-//! // spi is a struct implementing embedded_hal::spi::SpiDevice.
-//!
-//! let mut mcp25xx = MCP25xx { spi };
-//!
-//! let config = Config::default()
-//!     .mode(OperationMode::NormalOperation)
-//!     .bitrate(CNF_500K_BPS)
-//!     .receive_buffer_0(RXB0CTRL::default().with_rxm(RXM::ReceiveAny));
-//!
-//! mcp25xx.apply_config(&config).unwrap();
-//!
-//! // Send a frame
-//! let can_id = StandardId::new(123).unwrap();
-//! let data = [1, 2, 3, 4, 5, 6, 7, 8];
-//! let frame = CanFrame::new(can_id, &data).unwrap();
-//! mcp25xx.transmit(&frame).unwrap();
-//!
-//! // Receive a frame
-//! if let Ok(frame) = mcp25xx.receive() {
-//!     let _can_id = frame.id();
-//!     let _data = frame.data();
-//! }
-//! ```
-
 #![no_std]
-#![cfg_attr(doc, feature(doc_cfg))]
 use core::fmt::Debug;
 
-pub use config::Config;
 pub use embedded_can;
 use embedded_can::{ErrorKind, Frame};
 use embedded_hal::spi::{Operation, SpiDevice};
@@ -54,56 +9,18 @@ pub use idheader::IdHeader;
 
 use crate::registers::*;
 
-/// Preconfigured CNF registers for 8, 16 and 20 Mhz oscillators
-pub mod bitrates;
 /// Register bitfields
 pub mod registers;
 
-mod config;
 mod frame;
 mod idheader;
 
 /// Either a MCP2510, MCP2515 or MCP25625 CAN controller
-///
-/// ## Note about MCP2515 and MCP25625
-/// These chip revisions offer more efficient commands which the MCP2510 does not support.
-/// You can opt in to using these by activating the `mcp2515` or `mcp25625` feature of this crate.
-pub struct MCP25xx<SPI> {
+pub struct MCP25xxFD<SPI> {
     pub spi: SPI,
 }
 
-impl<SPI: SpiDevice> MCP25xx<SPI> {
-    /// Performs the following steps:
-    /// * resets the CAN Controller (this resets all registers and puts it into configuration mode)
-    /// * applies configuration
-    /// * applies selected operation mode
-    ///
-    /// ## Note about Masks
-    /// The default state of the mask registers is all zeros, which means, filters get ignored.
-    /// You should give values for both mask registers even if you only intend to use one receive buffer.
-    ///
-    /// ```
-    /// # use mcp25xx::doctesthelper::get_mcp25xx;
-    /// # use mcp25xx::{AcceptanceFilter, Config, MCP25xx};
-    /// # use mcp25xx::registers::OperationMode;
-    /// # use mcp25xx::bitrates::clock_16mhz::CNF_500K_BPS;
-    /// # use embedded_can::StandardId;
-    ///
-    /// let mut mcp25xx: MCP25xx<_> = get_mcp25xx();
-    ///
-    /// let can_id = StandardId::new(123).unwrap();
-    /// let filters = [
-    ///     (AcceptanceFilter::Filter0, can_id.into()),
-    ///     (AcceptanceFilter::Mask0, StandardId::MAX.into()),
-    ///     (AcceptanceFilter::Mask1, StandardId::MAX.into()),
-    /// ];
-    ///
-    /// let config = Config::default()
-    ///     .mode(OperationMode::NormalOperation)
-    ///     .bitrate(CNF_500K_BPS)
-    ///     .filters(&filters);
-    /// mcp25xx.apply_config(&config).unwrap();
-    /// ```
+impl<SPI: SpiDevice> MCP25xxFD<SPI> {
     pub fn apply_config(&mut self, config: &Config<'_>) -> Result<(), SPI::Error> {
         self.reset()?;
         self.set_bitrate(config.cnf)?;
@@ -195,7 +112,7 @@ impl<E: Debug> embedded_can::Error for SpiError<E> {
     }
 }
 
-impl<SPI: SpiDevice> embedded_can::nb::Can for MCP25xx<SPI> {
+impl<SPI: SpiDevice> embedded_can::nb::Can for MCP25xxFD<SPI> {
     type Frame = CanFrame;
     type Error = SpiError<SPI::Error>;
 
@@ -234,7 +151,7 @@ impl<SPI: SpiDevice> embedded_can::nb::Can for MCP25xx<SPI> {
     }
 }
 
-impl<SPI: SpiDevice> embedded_can::blocking::Can for MCP25xx<SPI> {
+impl<SPI: SpiDevice> embedded_can::blocking::Can for MCP25xxFD<SPI> {
     type Frame = CanFrame;
     type Error = SpiError<SPI::Error>;
 
@@ -253,7 +170,7 @@ impl<SPI: SpiDevice> embedded_can::blocking::Can for MCP25xx<SPI> {
     }
 }
 
-impl<SPI: SpiDevice> MCP25xx<SPI> {
+impl<SPI: SpiDevice> MCP25xxFD<SPI> {
     /// Read a single register
     pub fn read_register<R: Register>(&mut self) -> Result<R, SPI::Error> {
         let mut reg = [0];
@@ -444,7 +361,3 @@ pub enum Instruction {
     /// indicated by ‘abc’ in `0b0100_0abc`.
     LoadTxBuffer = 0b0100_0000,
 }
-
-#[doc(hidden)]
-// FIXME: #[cfg(doctest)] once https://github.com/rust-lang/rust/issues/67295 is fixed.
-pub mod doctesthelper;

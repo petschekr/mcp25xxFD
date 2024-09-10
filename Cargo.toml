@@ -1,9 +1,9 @@
 [package]
-name = "mcp25xx"
-description = "MCP2510, MCP2515 and MCP25625 CAN controller library"
+name = "mcp25xxfd"
+description = "MCP2518FD and MCP251863 CAN-FD controller library"
 version = "0.2.0"
 edition = "2021"
-repository = "https://github.com/WMT-GmbH/mcp25xx"
+repository = "https://github.com/petschekr/mcp25xxFD"
 license = "MIT OR Apache-2.0"
 categories = [
     "hardware-support",
@@ -13,23 +13,18 @@ categories = [
 keywords = [
     "embedded-hal",
     "CAN",
-    "MCP2510",
-    "MCP2515",
-    "MCP25625",
+    "MCP2517FD",
+    "MCP2518FD",
+    "MCP251863",
 ]
 
 [dependencies]
-embedded-hal = "1.0.0"
+embedded-hal = "1.0"
 embedded-can = "0.4.1"
 nb = "1.1.0"
 modular-bitfield = "0.11.2"
 
 [features]
-mcp2515 = []
-mcp25625 = []
 
 [dev-dependencies]
 embedded-hal-mock = "0.11.1"
-
-[package.metadata.docs.rs]
-all-features = true
