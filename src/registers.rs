@@ -1,22 +1,23 @@
 #![allow(clippy::identity_op)] // FIXME https://github.com/Robbepop/modular-bitfield/issues/62
 
-use core::mem;
 use modular_bitfield::prelude::*;
+use defmt::Format;
 
-type RegisterSize = u32;
+pub type RegisterSize = u32;
 
 /// 32 bit device register
-trait Register<const INDEX: u16 = 0, const INTERVAL: u16 = 1> {
+pub trait Register<const INDEX: u16 = 0, const INTERVAL: u16 = 1>: Sized {
     /// Base address of the register
     /// If an array, address of the first register in the array
     const ADDRESS: u16;
     fn get_address() -> u16 {
         Self::ADDRESS + INDEX * size_of::<RegisterSize>() as u16 * INTERVAL
     }
+    // fn from_bytes(bytes: [u8; 4]) -> Self;
 }
 
 /// Request Operation mode
-#[derive(BitfieldSpecifier, Copy, Clone, Debug)]
+#[derive(BitfieldSpecifier, PartialEq, Eq, Copy, Clone, Debug, Format)]
 #[bits = 3]
 pub enum OperationMode {
     Normal = 0b000,
@@ -29,136 +30,132 @@ pub enum OperationMode {
     Restricted = 0b111,
 }
 
-#[bitfield]
-#[repr(u32)]
-#[derive(Copy, Clone, Debug, Default)]
+#[bitfield(bits = 32)]
+#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
 pub struct CANControl {
     /// Device Net Filter Bit Number
-    dncnt: B5,
+    pub dncnt: B5,
     /// Enable ISO CRC in CAN FD Frames
-    isocrcen: bool,
+    pub isocrcen: bool,
     /// Protocol Exception Event Detection Disabled
-    pxedis: bool,
+    pub pxedis: bool,
     #[skip] __: B1,
     /// Enable CAN Bus Line Wake-up Filter
-    wakfil: bool,
+    pub wakfil: bool,
     /// Selectable Wake-up Filter Time
-    wft: B2,
+    pub wft: B2,
     /// CAN Module is Busy
-    #[skip(setters)] busy: bool,
+    #[skip(setters)]
+    pub busy: bool,
     /// Bit Rate Switching Disable
-    brsdis: bool,
+    pub brsdis: bool,
     #[skip] __: B3,
     /// Restrict Retransmission Attempts
-    rtxat: bool,
+    pub rtxat: bool,
     /// Transmit ESI in Gateway Mode
-    esigm: bool,
+    pub esigm: bool,
     /// Transition to Listen Only Mode on System Error
-    serr2lom: bool,
+    pub serr2lom: bool,
     /// Store in Transmit Event FIFO
-    stef: bool,
+    pub stef: bool,
     /// Enable Transmission Queue
-    txqen: bool,
+    pub txqen: bool,
     /// Operation Mode Status
-    #[skip(setters)] opmode: OperationMode,
+    #[skip(setters)]
+    pub opmode: OperationMode,
     /// Request Operation Mode
-    reqop: OperationMode,
+    pub reqop: OperationMode,
     /// Abort All Pending Transmissions
-    abat: bool,
+    pub abat: bool,
     /// Transmit Bandwidth Sharing bits
-    txbws: B4,
+    pub txbws: B4,
 }
 impl Register for CANControl {
     const ADDRESS: u16 = 0x000;
 }
 
-#[bitfield]
-#[repr(u32)]
-#[derive(Copy, Clone, Debug, Default)]
+#[bitfield(bits = 32)]
+#[derive(Copy, Clone, Debug, Format, Default)]
 pub struct NominalBitTimeConfig {
     /// Synchronization Jump Width
-    sjw: B7,
+    pub sjw: B7,
     #[skip] __: B1,
     /// Time Segment 2 bits (Phase Segment 2)
-    tseg2: B7,
+    pub tseg2: B7,
     #[skip] __: B1,
     /// Time Segment 1 bits (Propagation Segment + Phase Segment 1)
-    tseg1: B8,
+    pub tseg1: B8,
     /// Baud Rate Prescaler
-    brp: B8,
+    pub brp: B8,
 }
 impl Register for NominalBitTimeConfig {
     const ADDRESS: u16 = 0x004;
 }
 
-#[bitfield]
-#[repr(u32)]
-#[derive(Copy, Clone, Debug, Default)]
+#[bitfield(bits = 32)]
+#[derive(Copy, Clone, Debug, Format, Default)]
 pub struct DataBitTimeConfig {
     /// Synchronization Jump Width
-    sjw: B4,
+    pub sjw: B4,
     #[skip] __: B4,
     /// Time Segment 2 bits (Phase Segment 2)
-    tseg2: B4,
+    pub tseg2: B4,
     #[skip] __: B4,
     /// Time Segment 1 bits (Propagation Segment + Phase Segment 1)
-    tseg1: B5,
+    pub tseg1: B5,
     #[skip] __: B3,
     /// Baud Rate Prescaler
-    brp: B8,
+    pub brp: B8,
 }
 impl Register for DataBitTimeConfig {
     const ADDRESS: u16 = 0x008;
 }
 
-#[bitfield]
-#[repr(u32)]
-#[derive(Copy, Clone, Debug, Default)]
+#[bitfield(bits = 32)]
+#[derive(Copy, Clone, Debug, Format, Default)]
 pub struct TransmitterDelayCompensation {
     /// Transmitter Delay Compensation Value bits; Secondary Sample Point (SSP)
-    tdcv: B6,
+    pub tdcv: B6,
     #[skip] __: B2,
     /// Transmitter Delay Compensation Offset bits; Secondary Sample Point (SSP)
-    tdco: B7,
+    pub tdco: B7,
     #[skip] __: B1,
     /// Transmitter Delay Compensation Mode bits; Secondary Sample Point (SSP)
-    tdcmod: B2,
+    pub tdcmod: B2,
     #[skip] __: B6,
     /// Enable 12-Bit SID in CAN FD Base Format Messages
-    sid11en: bool,
+    pub sid11en: bool,
     /// Enable Edge Filtering during Bus Integration state
-    edgflten: bool,
+    pub edgflten: bool,
     #[skip] __: B6,
 }
 impl Register for TransmitterDelayCompensation {
     const ADDRESS: u16 = 0x00C;
 }
 
-#[bitfield]
-#[repr(u32)]
-#[derive(Copy, Clone, Debug, Default)]
+#[bitfield(bits = 32)]
+#[derive(Copy, Clone, Debug, Format, Default)]
 pub struct TimeBaseCounter {
     /// Time Base Counter
     /// This is a free running timer that increments every TBCPRE clocks when TBCEN is set
-    tbc: u32,
+    pub tbc: u32,
 }
 impl Register for TimeBaseCounter {
     const ADDRESS: u16 = 0x010;
 }
 
-#[bitfield]
-#[repr(u32)]
-#[derive(Copy, Clone, Debug, Default)]
+#[bitfield(bits = 32)]
+#[derive(Copy, Clone, Debug, Format, Default)]
 pub struct TimeStampControl {
     /// Time Base Counter Prescaler
-    tbcpre: B10,
+    pub tbcpre: B10,
     #[skip] __: B6,
     /// Time Base Counter Enable
-    tbcen: bool,
+    pub tbcen: bool,
     /// Time Stamp EOF
-    tseof: bool,
+    pub tseof: bool,
     /// Time Stamp res bit (FD frames only)
-    tsres: bool,
+    pub tsres: bool,
     #[skip] __: B13,
 }
 impl Register for TimeStampControl {
@@ -167,7 +164,7 @@ impl Register for TimeStampControl {
 
 /// Interrupt Flag
 /// If multiple interrupts are pending, the interrupt with the highest number will be indicated
-#[derive(BitfieldSpecifier, Copy, Clone, Debug)]
+#[derive(BitfieldSpecifier, PartialEq, Eq, Copy, Clone, Debug, Format)]
 #[bits = 7]
 pub enum InterruptFlag {
     TXQ = 0b0000000,
@@ -215,339 +212,326 @@ pub enum InterruptFlag {
     TransmitAttempt = 0b1001010,
 }
 
-#[bitfield]
-#[repr(u32)]
-#[derive(Copy, Clone, Debug, Default)]
+#[bitfield(bits = 32)]
+#[derive(Copy, Clone, Debug, Format, Default)]
 pub struct InterruptCode {
     /// Interrupt Flag Code
     #[skip(setters)]
-    icode: InterruptFlag,
+    pub icode: InterruptFlag,
     #[skip] __: B1,
     /// Filter Hit Number
     #[skip(setters)]
-    filhit: B5,
+    pub filhit: B5,
     #[skip] __: B3,
     /// Transmit Interrupt Flag Code
     #[skip(setters)]
-    txcode: InterruptFlag,
+    pub txcode: InterruptFlag,
     #[skip] __: B1,
     /// Receive Interrupt Flag Code
     #[skip(setters)]
-    rxcode: InterruptFlag,
+    pub rxcode: InterruptFlag,
     #[skip] __: B1,
 }
 impl Register for InterruptCode {
     const ADDRESS: u16 = 0x018;
 }
 
-#[bitfield]
-#[repr(u32)]
-#[derive(Copy, Clone, Debug, Default)]
+#[bitfield(bits = 32)]
+#[derive(Copy, Clone, Debug, Format, Default)]
 pub struct Interrupts {
     /// Transmit FIFO Interrupt Flag
     #[skip(setters)]
-    txif: bool,
+    pub txif: bool,
     /// Receive FIFO Interrupt Flag
     #[skip(setters)]
-    rxif: bool,
+    pub rxif: bool,
     /// Time Base Counter Overflow Interrupt Flag
-    tbcif: bool,
+    pub tbcif: bool,
     /// Operation Mode Change Interrupt Flag
-    modif: bool,
+    pub modif: bool,
     /// Transmit Event FIFO Interrupt Flag
     #[skip(setters)]
-    tefif: bool,
+    pub tefif: bool,
     #[skip] __: B3,
     /// ECC Error Interrupt Flag
     #[skip(setters)]
-    eccif: bool,
+    pub eccif: bool,
     /// SPI CRC Error Interrupt Flag
     #[skip(setters)]
-    spicrcif: bool,
+    pub spicrcif: bool,
     /// Transmit Attempt Interrupt Flag
     #[skip(setters)]
-    txatif: bool,
+    pub txatif: bool,
     /// Receive Object Overflow Interrupt Flag
     #[skip(setters)]
-    rxovif: bool,
+    pub rxovif: bool,
     /// System Error Interrupt Flag
-    serrif: bool,
+    pub serrif: bool,
     /// CAN Bus Error Interrupt Flag
-    cerrif: bool,
+    pub cerrif: bool,
     /// Bus Wake Up Interrupt Flag
-    wakif: bool,
+    pub wakif: bool,
     /// Invalid Message Interrupt Flag
-    ivmif: bool,
+    pub ivmif: bool,
     /// Transmit FIFO Interrupt Enable
-    txie: bool,
+    pub txie: bool,
     /// Receive FIFO Interrupt Enable
-    rxie: bool,
+    pub rxie: bool,
     /// Time Base Counter Interrupt Enable
-    tbcie: bool,
+    pub tbcie: bool,
     /// Mode Change Interrupt Enable
-    modie: bool,
+    pub modie: bool,
     /// Transmit Event FIFO Interrupt Enable
-    tefie: bool,
+    pub tefie: bool,
     #[skip] __: B3,
     /// ECC Error Interrupt Enable
-    eccie: bool,
+    pub eccie: bool,
     /// SPI CRC Error Interrupt Enable
-    spicrcie: bool,
+    pub spicrcie: bool,
     /// Transmit Attempt Interrupt Enable
-    txatie: bool,
+    pub txatie: bool,
     /// Receive FIFO Overflow Interrupt Enable
-    rxovie: bool,
+    pub rxovie: bool,
     /// System Error Interrupt Enable
-    serrie: bool,
+    pub serrie: bool,
     /// CAN Bus Error Interrupt Enable
-    cerrie: bool,
+    pub cerrie: bool,
     /// Bus Wake Up Interrupt Enable
-    wakeie: bool,
+    pub wakeie: bool,
     /// Invalid Message Interrupt Enable
-    ivmie: bool,
+    pub ivmie: bool,
 }
 impl Register for Interrupts {
     const ADDRESS: u16 = 0x01C;
 }
 
-#[bitfield]
-#[repr(u32)]
-#[derive(Copy, Clone, Debug, Default)]
+#[bitfield(bits = 32)]
+#[derive(Copy, Clone, Debug, Format, Default)]
 pub struct ReceiveInterruptStatus {
     #[skip] __: B1,
     /// Receive FIFO Interrupt Pending
     /// 'or’ of enabled RXFIFO flags; flags will be cleared when the condition of the FIFO terminates
     #[skip(setters)]
-    rfif: B31,
+    pub rfif: B31,
 }
 impl Register for ReceiveInterruptStatus {
     const ADDRESS: u16 = 0x020;
 }
 
-#[bitfield]
-#[repr(u32)]
-#[derive(Copy, Clone, Debug, Default)]
+#[bitfield(bits = 32)]
+#[derive(Copy, Clone, Debug, Format, Default)]
 pub struct ReceiveOverflowInterruptStatus {
     #[skip] __: B1,
     /// Receive FIFO Overflow Interrupt Pending
     #[skip(setters)]
-    rfovif: B31,
+    pub rfovif: B31,
 }
 impl Register for ReceiveOverflowInterruptStatus {
     const ADDRESS: u16 = 0x028;
 }
 
-#[bitfield]
-#[repr(u32)]
-#[derive(Copy, Clone, Debug, Default)]
+#[bitfield(bits = 32)]
+#[derive(Copy, Clone, Debug, Format, Default)]
 pub struct TransmitInterruptStatus {
     /// TXQ Interrupt Pending
     #[skip(setters)]
-    txqif: B1,
+    pub txqif: B1,
     /// Transmit FIFO Interrupt Pending
     /// 'or’ of enabled TXFIFO flags; flags will be cleared when the condition of the FIFO terminates
     #[skip(setters)]
-    tfif: B31,
+    pub tfif: B31,
 }
 impl Register for TransmitInterruptStatus {
     const ADDRESS: u16 = 0x024;
 }
 
-#[bitfield]
-#[repr(u32)]
-#[derive(Copy, Clone, Debug, Default)]
+#[bitfield(bits = 32)]
+#[derive(Copy, Clone, Debug, Format, Default)]
 pub struct TransmitAttemptInterruptStatus {
     /// TXQ Attempt Interrupt Pending
     #[skip(setters)]
-    txqatif: B1,
+    pub txqatif: B1,
     /// Transmit FIFO Attempt Interrupt Pending
     /// 'or’ of enabled TXFIFO flags; flags will be cleared when the condition of the FIFO terminates
     #[skip(setters)]
-    tfatif: B31,
+    pub tfatif: B31,
 }
 impl Register for TransmitAttemptInterruptStatus {
     const ADDRESS: u16 = 0x02C;
 }
 
-#[bitfield]
-#[repr(u32)]
-#[derive(Copy, Clone, Debug, Default)]
+#[bitfield(bits = 32)]
+#[derive(Copy, Clone, Debug, Format, Default)]
 pub struct TransmitRequest {
     /// Transmit Queue Message Send Request
     /// Will automatically clear when the message(s) queued is/are successfully sent
     #[skip(setters)]
-    txqreq: bool,
+    pub txqreq: bool,
     /// Transmit FIFO Message Send Request
     /// Will automatically clear when the message(s) queued is/are successfully sent
     #[skip(setters)]
-    txreq: B31,
+    pub txreq: B31,
 }
 impl Register for TransmitRequest {
     const ADDRESS: u16 = 0x030;
 }
 
-#[bitfield]
-#[repr(u32)]
-#[derive(Copy, Clone, Debug, Default)]
+#[bitfield(bits = 32)]
+#[derive(Copy, Clone, Debug, Format, Default)]
 pub struct TransmitReceiveErrorCount {
     /// Receive Error Counter
     #[skip(setters)]
-    rec: u8,
+    pub rec: u8,
     /// Transmit Error Counter
     #[skip(setters)]
-    tec: u8,
+    pub tec: u8,
     /// Transmitter or Receiver is in Error Warning State
     #[skip(setters)]
-    ewarn: bool,
+    pub ewarn: bool,
     /// Receiver in Error Warning State (128 > REC > 95)
     #[skip(setters)]
-    rxwarn: bool,
+    pub rxwarn: bool,
     /// Transmitter in Error Warning State (128 > TEC > 95
     #[skip(setters)]
-    txwarn: bool,
+    pub txwarn: bool,
     /// Receiver in Error Passive State (REC > 127
     #[skip(setters)]
-    rxbp: bool,
+    pub rxbp: bool,
     /// Transmitter in Error Passive State (TEC > 127
     #[skip(setters)]
-    txbp: bool,
+    pub txbp: bool,
     /// Transmitter in Bus Off State bit (TEC > 255)
     #[skip(setters)]
-    txbo: bool,
+    pub txbo: bool,
     #[skip] __: B10,
 }
 impl Register for TransmitReceiveErrorCount {
     const ADDRESS: u16 = 0x034;
 }
 
-#[bitfield]
-#[repr(u32)]
-#[derive(Copy, Clone, Debug, Default)]
+#[bitfield(bits = 32)]
+#[derive(Copy, Clone, Debug, Format, Default)]
 pub struct BusDiagnostic0 {
     /// Nominal Bit Rate Receive Error Counter
-    nrerrcnt: u8,
+    pub nrerrcnt: u8,
     /// Nominal Bit Rate Transmit Error Counter
-    nterrcnt: u8,
+    pub nterrcnt: u8,
     /// Data Bit Rate Receive Error Counter
-    drerrcnt: u8,
+    pub drerrcnt: u8,
     /// Data Bit Rate Transmit Error Counter
-    dterrcnt: u8,
+    pub dterrcnt: u8,
 }
 impl Register for BusDiagnostic0 {
     const ADDRESS: u16 = 0x038;
 }
 
-#[bitfield]
-#[repr(u32)]
-#[derive(Copy, Clone, Debug, Default)]
+#[bitfield(bits = 32)]
+#[derive(Copy, Clone, Debug, Format, Default)]
 pub struct BusDiagnostic1 {
     /// Error-free Message Counter
-    efmsgcnt: u16,
+    pub efmsgcnt: u16,
     /// During the transmission of a message (or acknowledge bit, or active error flag, or overload
     /// flag), the device wanted to send a dominant level (data or identifier bit logical value ‘0’), but the
     /// monitored bus value was recessive.
-    nbit0err: bool,
+    pub nbit0err: bool,
     /// During the transmission of a message (with the exception of the arbitration field), the
     /// device wanted to send a recessive level (bit of logical value ‘1’), but the monitored bus value was
     /// dominant.
-    nbit1err: bool,
+    pub nbit1err: bool,
     /// Transmitted message was not acknowledged
-    nackerr: bool,
+    pub nackerr: bool,
     /// A fixed format part of a received frame has the wrong format
-    nformerr: bool,
+    pub nformerr: bool,
     /// More than 5 equal bits in a sequence have occurred in a part of a received message
     /// where this is not allowed.
-    nstuferr: bool,
+    pub nstuferr: bool,
     /// The CRC check sum of a received message was incorrect. The CRC of an incoming
     /// message does not match with the CRC calculated from the received data
-    ncrcerr: bool,
+    pub ncrcerr: bool,
     #[skip] __: B1,
     /// Device went to bus-off (and auto-recovered)
-    txboerr: bool,
-    dbit0err: bool,
-    dbit1err: bool,
+    pub txboerr: bool,
+    pub dbit0err: bool,
+    pub dbit1err: bool,
     #[skip] __: B1,
-    dformerr: bool,
-    dstuferr: bool,
-    dcrcerr: bool,
+    pub dformerr: bool,
+    pub dstuferr: bool,
+    pub dcrcerr: bool,
     /// ESI flag of a received CAN FD message was set
-    esi: bool,
+    pub esi: bool,
     /// DLC Mismatch
     /// During a transmission or reception, the specified DLC is larger than the PLSIZE of the FIFO element
-    dlcmm: bool,
+    pub dlcmm: bool,
 }
 impl Register for BusDiagnostic1 {
     const ADDRESS: u16 = 0x03C;
 }
 
-#[bitfield]
-#[repr(u32)]
-#[derive(Copy, Clone, Debug, Default)]
+#[bitfield(bits = 32)]
+#[derive(Copy, Clone, Debug, Format, Default)]
 pub struct TransmitEventFIFOControl {
     /// Transmit Event FIFO Not Empty Interrupt Enable
-    tefneie: bool,
+    pub tefneie: bool,
     /// Transmit Event FIFO Half Full Interrupt Enable
-    tefhie: bool,
+    pub tefhie: bool,
     /// Transmit Event FIFO Full Interrupt Enable
-    teffie: bool,
+    pub teffie: bool,
     /// Transmit Event FIFO Overflow Interrupt Enable
-    tefovie: bool,
+    pub tefovie: bool,
     #[skip] __: B1,
     /// Transmit Event FIFO Time Stamp Enable
-    teftsen: bool,
+    pub teftsen: bool,
     #[skip] __: B2,
     /// Increment Tail
     /// When this bit is set, the FIFO tail will increment by a single message
-    uinc: bool,
+    pub uinc: bool,
     #[skip] __: B1,
     /// FIFO will reset -- wait to clear before taking action
-    freset: bool,
+    pub freset: bool,
     #[skip] __: B13,
     /// FIFO Size
     /// Begins at 0b0000 = 1
-    fsize: B5,
+    pub fsize: B5,
     #[skip] __: B3,
 }
 impl Register for TransmitEventFIFOControl {
     const ADDRESS: u16 = 0x040;
 }
 
-#[bitfield]
-#[repr(u32)]
-#[derive(Copy, Clone, Debug, Default)]
+#[bitfield(bits = 32)]
+#[derive(Copy, Clone, Debug, Format, Default)]
 pub struct TransmitEventFIFOStatus {
     /// Transmit Event FIFO Not Empty Interrupt Flag
     #[skip(setters)]
-    tefneif: bool,
+    pub tefneif: bool,
     /// Transmit Event FIFO Half Full Interrupt Flag
     #[skip(setters)]
-    tefhif: bool,
+    pub tefhif: bool,
     /// Transmit Event FIFO Full Interrupt Flag
     #[skip(setters)]
-    teffif: bool,
+    pub teffif: bool,
     /// Transmit Event FIFO Overflow Interrupt Flag
     #[skip(setters)]
-    tefovif: bool,
+    pub tefovif: bool,
     #[skip] __: B28,
 }
 impl Register for TransmitEventFIFOStatus {
     const ADDRESS: u16 = 0x044;
 }
 
-#[bitfield]
-#[repr(u32)]
-#[derive(Copy, Clone, Debug, Default)]
+#[bitfield(bits = 32)]
+#[derive(Copy, Clone, Debug, Format, Default)]
 pub struct TransmitEventFIFOUserAddress {
     /// Transmit Event FIFO User Address
     /// The address where the next object is to be read (FIFO tail)
     #[skip(setters)]
-    tefua: u32,
+    pub tefua: u32,
 }
 impl Register for TransmitEventFIFOUserAddress {
     const ADDRESS: u16 = 0x048;
 }
 
-#[derive(BitfieldSpecifier, Copy, Clone, Debug)]
+#[derive(BitfieldSpecifier, PartialEq, Eq, Copy, Clone, Debug, Format)]
 #[bits = 2]
 pub enum RetransmissionAttempts {
     Disable = 0b00,
@@ -556,235 +540,227 @@ pub enum RetransmissionAttempts {
     Unlimited2 = 0b11,
 }
 
-#[bitfield]
-#[repr(u32)]
-#[derive(Copy, Clone, Debug, Default)]
+#[bitfield(bits = 32)]
+#[derive(Copy, Clone, Debug, Format, Default)]
 pub struct TransmitQueueControl {
     /// Transmit Queue Not Full Interrupt Enable
-    txqnie: bool,
+    pub txqnie: bool,
     #[skip] __: B1,
     /// Transmit Queue Empty Interrupt Enable
-    txqeie: bool,
+    pub txqeie: bool,
     #[skip] __: B1,
     /// Transmit Attempts Exhausted Interrupt Enable
-    txatie: bool,
+    pub txatie: bool,
     #[skip] __: B2,
     /// TX Enable (always true)
-    txen: bool,
+    pub txen: bool,
     /// Increment Head
-    uinc: bool,
+    pub uinc: bool,
     /// Message Send Request
-    txreq: bool,
+    pub txreq: bool,
     /// FIFO Reset
-    freset: bool,
+    pub freset: bool,
     #[skip] __: B5,
     /// Message Transmit Priority
     /// 0 = lowest, 31 = highest
-    txpri: B5,
+    pub txpri: B5,
     /// Retransmission Attempts
-    txat: RetransmissionAttempts,
+    pub txat: RetransmissionAttempts,
     #[skip] __: B1,
     /// FIFO Size
     /// Begins at 0b0000 = 1
-    fsize: B5,
+    pub fsize: B5,
     /// Payload Size
     /// 0b000 = 8, 0b111 = 64
-    plsize: B3,
+    pub plsize: B3,
 }
 impl Register for TransmitQueueControl {
     const ADDRESS: u16 = 0x050;
 }
 
-#[bitfield]
-#[repr(u32)]
-#[derive(Copy, Clone, Debug, Default)]
+#[bitfield(bits = 32)]
+#[derive(Copy, Clone, Debug, Format, Default)]
 pub struct TransmitQueueStatus {
     /// Transmit Queue Not Full Interrupt Flag
     #[skip(setters)]
-    txqnif: bool,
+    pub txqnif: bool,
     #[skip] __: B1,
     /// Transmit Queue Empty Interrupt Flag
     #[skip(setters)]
-    txqeif: bool,
+    pub txqeif: bool,
     #[skip] __: B1,
     /// Transmit Attempts Exhausted Interrupt Flag
-    txatif: bool,
+    pub txatif: bool,
     /// Error Detected During Transmission
-    txerr: bool,
+    pub txerr: bool,
     /// Message Lost Arbitration Status
-    txlarb: bool,
+    pub txlarb: bool,
     /// Message Aborted Status
-    txabt: bool,
+    pub txabt: bool,
     /// Transmit Queue Message Index
     /// Index to the message that the FIFO will next attempt to transmit
     #[skip(setters)]
-    txqci: B5,
+    pub txqci: B5,
     #[skip] __: B19,
 }
 impl Register for TransmitQueueStatus {
     const ADDRESS: u16 = 0x054;
 }
 
-#[bitfield]
-#[repr(u32)]
-#[derive(Copy, Clone, Debug, Default)]
+#[bitfield(bits = 32)]
+#[derive(Copy, Clone, Debug, Format, Default)]
 pub struct TransmitQueueUserAddress {
     /// TXQ User Address
     /// The address where the next message is to be written (TXQ head)
     #[skip(setters)]
-    txqua: u32,
+    pub txqua: u32,
 }
 impl Register for TransmitQueueUserAddress {
     const ADDRESS: u16 = 0x058;
 }
 
-#[bitfield]
-#[repr(u32)]
-#[derive(Copy, Clone, Debug, Default)]
+#[bitfield(bits = 32)]
+#[derive(Copy, Clone, Debug, Format, Default)]
 pub struct FIFOControl {
     /// Transmit/Receive FIFO Not Full/Not Empty Interrupt Enable
-    tfnrfnie: bool,
+    pub tfnrfnie: bool,
     /// Transmit/Receive FIFO Half Empty/Half Full Interrupt Enable
-    tfhrfhie: bool,
+    pub tfhrfhie: bool,
     /// Transmit/Receive FIFO Empty/Full Interrupt Enable
-    tferffie: bool,
+    pub tferffie: bool,
     /// Overflow Interrupt Enable
-    rxovie: bool,
+    pub rxovie: bool,
     /// Transmit Attempts Exhausted Interrupt Enable
-    txatie: bool,
+    pub txatie: bool,
     /// Received Message Time Stamp Enable
-    rxtsen: bool,
+    pub rxtsen: bool,
     /// Auto RTR Enable
-    rtren: bool,
+    pub rtren: bool,
     /// TX/RX FIFO Selection
     /// true = Transmit, false = Receive
-    txen: bool,
+    pub txen: bool,
     /// Increment Head/Tail
-    uinc: bool,
+    pub uinc: bool,
     /// Message Send Request
-    rxreq: bool,
+    pub rxreq: bool,
     /// FIFO Reset
-    freset: bool,
+    pub freset: bool,
     #[skip] __: B5,
     /// Message Transmit Priority
-    txpri: B5,
+    pub txpri: B5,
     /// Retransmission Attempts
-    txat: RetransmissionAttempts,
+    pub txat: RetransmissionAttempts,
     #[skip] __: B1,
     /// FIFO Size
-    fsize: B5,
+    pub fsize: B5,
     /// Payload Size
-    plsize: B3,
+    pub plsize: B3,
 }
 impl Register for FIFOControl {
     const ADDRESS: u16 = 0x05C;
 }
 
-#[bitfield]
-#[repr(u32)]
-#[derive(Copy, Clone, Debug, Default)]
+#[bitfield(bits = 32)]
+#[derive(Copy, Clone, Debug, Format, Default)]
 pub struct FIFOStatus {
     /// Transmit/Receive FIFO Not Full/Not Empty Interrupt Flag
     #[skip(setters)]
-    tfnrfnif: bool,
+    pub tfnrfnif: bool,
     /// Transmit/Receive FIFO Half Empty/Half Full Interrupt Flag
     #[skip(setters)]
-    tfhrfhif: bool,
+    pub tfhrfhif: bool,
     /// Transmit/Receive FIFO Empty/Full Interrupt Flag
     #[skip(setters)]
-    tferffif: bool,
+    pub tferffif: bool,
     /// Receive FIFO Overflow Interrupt Flag
-    rxovif: bool,
+    pub rxovif: bool,
     /// Transmit Attempts Exhausted Interrupt Pending
-    txatif: bool,
+    pub txatif: bool,
     /// Error Detected During Transmission
-    txerr: bool,
+    pub txerr: bool,
     /// Message Lost Arbitration Status
-    txlarb: bool,
+    pub txlarb: bool,
     /// Message Aborted Status
-    txabt: bool,
+    pub txabt: bool,
     /// FIFO Message Index
     #[skip(setters)]
-    fifoci: B5,
+    pub fifoci: B5,
     #[skip] __: B19,
 }
 impl Register for FIFOStatus {
     const ADDRESS: u16 = 0x060;
 }
 
-#[bitfield]
-#[repr(u32)]
-#[derive(Copy, Clone, Debug, Default)]
+#[bitfield(bits = 32)]
+#[derive(Copy, Clone, Debug, Format, Default)]
 pub struct FIFOUserAddress {
     /// FIFO User Address
     /// The address where the next message is to be written (FIFO head)
     /// The address where the next message is to be read (FIFO tail)
     #[skip(setters)]
-    fifoua: u32,
+    pub fifoua: u32,
 }
 impl Register for FIFOUserAddress {
     const ADDRESS: u16 = 0x064;
 }
 
-#[bitfield]
-#[repr(u32)]
-#[derive(Copy, Clone, Debug, Default)]
+#[bitfield(bits = 32)]
+#[derive(Copy, Clone, Debug, Format, Default)]
 pub struct FilterControl {
     /// Pointer to FIFO when Filter 0 hits
-    f0bp: B5,
+    pub f0bp: B5,
     #[skip] __: B2,
     /// Enable Filter 0 to Accept Messages
-    flten0: bool,
+    pub flten0: bool,
     /// Pointer to FIFO when Filter 1 hits
-    f1bp: B5,
+    pub f1bp: B5,
     #[skip] __: B2,
     /// Enable Filter 1 to Accept Messages
-    flten1: bool,
+    pub flten1: bool,
     /// Pointer to FIFO when Filter 2 hits
-    f2bp: B5,
+    pub f2bp: B5,
     #[skip] __: B2,
     /// Enable Filter 2 to Accept Messages
-    flten2: bool,
+    pub flten2: bool,
     /// Pointer to FIFO when Filter 3 hits
-    f3bp: B5,
+    pub f3bp: B5,
     #[skip] __: B2,
     /// Enable Filter 3 to Accept Messages
-    flten3: bool,
+    pub flten3: bool,
 }
 impl Register for FilterControl {
     const ADDRESS: u16 = 0x1D0;
 }
 
-#[bitfield]
-#[repr(u32)]
-#[derive(Copy, Clone, Debug, Default)]
+#[bitfield(bits = 32)]
+#[derive(Copy, Clone, Debug, Format, Default)]
 pub struct FilterObject {
     /// Standard Identifier filter
-    sid: B11,
+    pub sid: B11,
     /// Extended Identifier bits
-    eid: B18,
+    pub eid: B18,
     /// Standard Identifier filter
-    sid11: bool,
+    pub sid11: bool,
     /// Extended Identifier enable
-    exide: bool,
+    pub exide: bool,
     #[skip] __: B1,
 }
 impl Register for FilterObject {
     const ADDRESS: u16 = 0x1F0;
 }
 
-#[bitfield]
-#[repr(u32)]
-#[derive(Copy, Clone, Debug, Default)]
+#[bitfield(bits = 32)]
+#[derive(Copy, Clone, Debug, Format, Default)]
 pub struct Mask {
     /// Standard Identifier mask
-    msid: B11,
+    pub msid: B11,
     /// Extended Identifier mask
-    meid: B18,
+    pub meid: B18,
     /// Standard Identifier mask
-    msid11: bool,
+    pub msid11: bool,
     /// Identifier Receive mode bit
-    mide: bool,
+    pub mide: bool,
+    #[skip] __: B1,
 }
 impl Register for Mask {
     const ADDRESS: u16 = 0x1F4;
