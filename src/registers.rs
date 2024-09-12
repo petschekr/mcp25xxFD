@@ -26,6 +26,166 @@ where
     type Bitfield = Self;
 }
 
+/// Clock Output Divisor
+#[derive(BitfieldSpecifier, PartialEq, Eq, Copy, Clone, Debug, Format)]
+#[bits = 2]
+pub enum ClockOutputDivisor {
+    DivideBy1 = 0b00,
+    DivideBy2 = 0b01,
+    DivideBy4 = 0b10,
+    DivideBy10 = 0b11,
+}
+
+/// System Clock Divisor
+#[derive(BitfieldSpecifier, PartialEq, Eq, Copy, Clone, Debug, Format)]
+#[bits = 1]
+pub enum ClockDivisor {
+    DivideBy1 = 0b00,
+    DivideBy2 = 0b01,
+}
+
+#[bitfield(bits = 32)]
+#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
+pub struct OscillatorControl {
+    /// PLL enable
+    pub pllen: bool,
+    #[skip] __: B1,
+    /// Clock (Oscillator) disable (i.e. sleep mode)
+    pub oscdis: bool,
+    /// Low Power Mode
+    pub lpmen: bool,
+    /// System Clock Divisor
+    pub sclkdiv: ClockDivisor,
+    /// Clock Output Divisor
+    pub clkodiv: ClockOutputDivisor,
+    #[skip] __: B1,
+    #[skip(setters)]
+    /// PLL ready
+    pub pllrdy: bool,
+    #[skip] __: B1,
+    /// Clock ready
+    #[skip(setters)]
+    pub oscrdy: bool,
+    #[skip] __: B1,
+    /// Synchronized SCLKDIV
+    #[skip(setters)]
+    pub sclkrdy: bool,
+    #[skip] __: B19,
+}
+impl RegisterAddress for OscillatorControl {
+    const ADDRESS: u16 = 0xE00;
+}
+
+#[bitfield(bits = 32)]
+#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
+pub struct IOControl {
+    /// GPIO0 Data Direction
+    pub tris0: bool,
+    /// GPIO1 Data Direction
+    pub tris1: bool,
+    #[skip] __: B4,
+    /// Enable Transceiver Standby Pin Control
+    pub xstbyen: bool,
+    #[skip] __: B1,
+    /// GPIO0 latch
+    pub lat0: bool,
+    /// GPIO1 latch
+    pub lat1: bool,
+    #[skip] __: B6,
+    /// GPIO0 status
+    pub gpio0: bool,
+    /// GPIO1 status
+    pub gpio1: bool,
+    #[skip] __: B6,
+    /// GPIO0 pin mode
+    pub pm0: bool,
+    /// GPIO1 pin mode
+    pub pm1: bool,
+    #[skip] __: B2,
+    /// TXCAN Open Drain Mode
+    pub txcanod: bool,
+    /// Start-of-Frame signal
+    pub sof: bool,
+    /// Interrupt pins Open Drain Mode
+    pub intod: bool,
+    #[skip] __: B1,
+}
+impl RegisterAddress for IOControl {
+    const ADDRESS: u16 = 0xE04;
+}
+
+#[bitfield(bits = 32)]
+#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
+pub struct CRCStatus {
+    /// CRC value from last CRC mismatch
+    pub crc: u16,
+    /// CRC Error Interrupt Flag
+    pub crcerrif: bool,
+    /// CRC Command Format Error Interrupt Flag
+    pub ferrif: bool,
+    #[skip] __: B6,
+    /// CRC Error Interrupt Enable
+    pub crcerrie: bool,
+    /// CRC Command Format Error Interrupt Enable
+    pub ferrie: bool,
+    #[skip] __: B6,
+}
+impl RegisterAddress for CRCStatus {
+    const ADDRESS: u16 = 0xE08;
+}
+
+#[bitfield(bits = 32)]
+#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
+pub struct ECCControl {
+    /// ECC enable
+    pub eccen: bool,
+    /// Single Error Detection Interrupt Enable
+    pub secie: bool,
+    /// Double Error Detection Interrupt Enable
+    pub dedie: bool,
+    #[skip] __: B5,
+    /// Parity bits used during write to RAM when ECC is disabled
+    pub parity: B7,
+    #[skip] __: B17,
+}
+impl RegisterAddress for ECCControl {
+    const ADDRESS: u16 = 0xE0C;
+}
+
+#[bitfield(bits = 32)]
+#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
+pub struct ECCStatus {
+    #[skip] __: B1,
+    /// Single Error Detection Interrupt Flag
+    pub secie: bool,
+    /// Double Error Detection Interrupt Flag
+    pub dedie: bool,
+    #[skip] __: B5,
+    #[skip] __: B8,
+    /// Address where last ECC error occurred
+    #[skip(setters)]
+    pub erraddr: B12,
+    #[skip] __: B4,
+}
+impl RegisterAddress for ECCStatus {
+    const ADDRESS: u16 = 0xE10;
+}
+
+#[bitfield(bits = 32)]
+#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
+pub struct DeviceID {
+    /// Silicon Revision
+    #[skip(setters)]
+    pub rev: B4,
+    /// Device ID
+    #[skip(setters)]
+    pub id: B4,
+    #[skip] __: B24,
+}
+impl RegisterAddress for DeviceID {
+    const ADDRESS: u16 = 0xE14;
+}
+
 /// Request Operation mode
 #[derive(BitfieldSpecifier, PartialEq, Eq, Copy, Clone, Debug, Format)]
 #[bits = 3]
