@@ -19,21 +19,33 @@ impl<SPI: SpiDevice> MCP25xxFD<SPI> {
         }
     }
 
-    /// Read a single register
-    pub async fn read_register<R: Register>(&mut self) -> Result<R, ()>
-        where R: modular_bitfield::Specifier<Bytes = u32, InOut = R>,
-    {
-        let tx = Instruction::Read.header(R::get_address());
-        let mut rx = [0u8; 6];
-        self.spi.transfer(&mut rx, &tx).await.unwrap();
+    pub async fn reset(&mut self) -> Result<(), ()> {
+        let tx = Instruction::Reset.header(0x00);
+        self.spi.write(&tx).await.unwrap();
 
-        let data = u32::from_le_bytes(rx[2..].try_into().unwrap());
-        Ok(R::from_bytes(data).unwrap())
+        Ok(())
+    }
+
+    /// Read a single register
+    pub async fn read_register<R: Register>(&mut self) -> Result<R::Bitfield, ()> {
+        let tx = Instruction::Read.header(R::ADDRESS);
+        let mut rx = [0u8; 6];
+        self.spi.transfer(&mut rx, &tx).await.unwrap(); // TODO: SPI error handling
+
+        Ok(R::parse(&rx[2..]))
     }
 
     /// Write a single register
-    pub async fn write_register<R: Register + Into<u32>>(&mut self) -> () {
+    pub async fn write_register<R: Register<Bitfield = R>>(&mut self, register: R) -> Result<(), ()> {
+        let mut tx = [0u8; 6];
+        {
+            let (header, data) = tx.split_at_mut(2);
+            header.copy_from_slice(&Instruction::Write.header(R::ADDRESS));
+            data.copy_from_slice(&R::serialize(register));
+        }
+        self.spi.write(&tx).await.unwrap(); // TODO: SPI error handling
 
+        Ok(())
     }
 }
 

@@ -3,17 +3,27 @@
 use modular_bitfield::prelude::*;
 use defmt::Format;
 
-pub type RegisterSize = u32;
-
-/// 32 bit device register
-pub trait Register<const INDEX: u16 = 0, const INTERVAL: u16 = 1>: Sized {
-    /// Base address of the register
-    /// If an array, address of the first register in the array
+pub trait RegisterAddress {
     const ADDRESS: u16;
-    fn get_address() -> u16 {
-        Self::ADDRESS + INDEX * size_of::<RegisterSize>() as u16 * INTERVAL
+}
+
+pub trait Register: RegisterAddress {
+    type Bitfield: Specifier<Bytes=u32, InOut=Self::Bitfield>;
+    fn parse(data: &[u8]) -> Self::Bitfield {
+        let data = u32::from_le_bytes(data.try_into().unwrap());
+        Self::Bitfield::from_bytes(data).unwrap()
     }
-    // fn from_bytes(bytes: [u8; 4]) -> Self;
+    fn serialize(register: Self::Bitfield) -> [u8; 4] {
+        Self::Bitfield::into_bytes(register)
+            .unwrap()
+            .to_le_bytes()
+    }
+}
+impl<T> Register for T
+where
+    T: Specifier<Bytes=u32, InOut=Self> + RegisterAddress
+{
+    type Bitfield = Self;
 }
 
 /// Request Operation mode
@@ -70,12 +80,12 @@ pub struct CANControl {
     /// Transmit Bandwidth Sharing bits
     pub txbws: B4,
 }
-impl Register for CANControl {
+impl RegisterAddress for CANControl {
     const ADDRESS: u16 = 0x000;
 }
 
 #[bitfield(bits = 32)]
-#[derive(Copy, Clone, Debug, Format, Default)]
+#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
 pub struct NominalBitTimeConfig {
     /// Synchronization Jump Width
     pub sjw: B7,
@@ -88,12 +98,12 @@ pub struct NominalBitTimeConfig {
     /// Baud Rate Prescaler
     pub brp: B8,
 }
-impl Register for NominalBitTimeConfig {
+impl RegisterAddress for NominalBitTimeConfig {
     const ADDRESS: u16 = 0x004;
 }
 
 #[bitfield(bits = 32)]
-#[derive(Copy, Clone, Debug, Format, Default)]
+#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
 pub struct DataBitTimeConfig {
     /// Synchronization Jump Width
     pub sjw: B4,
@@ -107,12 +117,12 @@ pub struct DataBitTimeConfig {
     /// Baud Rate Prescaler
     pub brp: B8,
 }
-impl Register for DataBitTimeConfig {
+impl RegisterAddress for DataBitTimeConfig {
     const ADDRESS: u16 = 0x008;
 }
 
 #[bitfield(bits = 32)]
-#[derive(Copy, Clone, Debug, Format, Default)]
+#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
 pub struct TransmitterDelayCompensation {
     /// Transmitter Delay Compensation Value bits; Secondary Sample Point (SSP)
     pub tdcv: B6,
@@ -129,23 +139,23 @@ pub struct TransmitterDelayCompensation {
     pub edgflten: bool,
     #[skip] __: B6,
 }
-impl Register for TransmitterDelayCompensation {
+impl RegisterAddress for TransmitterDelayCompensation {
     const ADDRESS: u16 = 0x00C;
 }
 
 #[bitfield(bits = 32)]
-#[derive(Copy, Clone, Debug, Format, Default)]
+#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
 pub struct TimeBaseCounter {
     /// Time Base Counter
     /// This is a free running timer that increments every TBCPRE clocks when TBCEN is set
     pub tbc: u32,
 }
-impl Register for TimeBaseCounter {
+impl RegisterAddress for TimeBaseCounter {
     const ADDRESS: u16 = 0x010;
 }
 
 #[bitfield(bits = 32)]
-#[derive(Copy, Clone, Debug, Format, Default)]
+#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
 pub struct TimeStampControl {
     /// Time Base Counter Prescaler
     pub tbcpre: B10,
@@ -158,7 +168,7 @@ pub struct TimeStampControl {
     pub tsres: bool,
     #[skip] __: B13,
 }
-impl Register for TimeStampControl {
+impl RegisterAddress for TimeStampControl {
     const ADDRESS: u16 = 0x014;
 }
 
@@ -213,7 +223,7 @@ pub enum InterruptFlag {
 }
 
 #[bitfield(bits = 32)]
-#[derive(Copy, Clone, Debug, Format, Default)]
+#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
 pub struct InterruptCode {
     /// Interrupt Flag Code
     #[skip(setters)]
@@ -232,12 +242,12 @@ pub struct InterruptCode {
     pub rxcode: InterruptFlag,
     #[skip] __: B1,
 }
-impl Register for InterruptCode {
+impl RegisterAddress for InterruptCode {
     const ADDRESS: u16 = 0x018;
 }
 
 #[bitfield(bits = 32)]
-#[derive(Copy, Clone, Debug, Format, Default)]
+#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
 pub struct Interrupts {
     /// Transmit FIFO Interrupt Flag
     #[skip(setters)]
@@ -301,12 +311,12 @@ pub struct Interrupts {
     /// Invalid Message Interrupt Enable
     pub ivmie: bool,
 }
-impl Register for Interrupts {
+impl RegisterAddress for Interrupts {
     const ADDRESS: u16 = 0x01C;
 }
 
 #[bitfield(bits = 32)]
-#[derive(Copy, Clone, Debug, Format, Default)]
+#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
 pub struct ReceiveInterruptStatus {
     #[skip] __: B1,
     /// Receive FIFO Interrupt Pending
@@ -314,24 +324,24 @@ pub struct ReceiveInterruptStatus {
     #[skip(setters)]
     pub rfif: B31,
 }
-impl Register for ReceiveInterruptStatus {
+impl RegisterAddress for ReceiveInterruptStatus {
     const ADDRESS: u16 = 0x020;
 }
 
 #[bitfield(bits = 32)]
-#[derive(Copy, Clone, Debug, Format, Default)]
+#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
 pub struct ReceiveOverflowInterruptStatus {
     #[skip] __: B1,
     /// Receive FIFO Overflow Interrupt Pending
     #[skip(setters)]
     pub rfovif: B31,
 }
-impl Register for ReceiveOverflowInterruptStatus {
+impl RegisterAddress for ReceiveOverflowInterruptStatus {
     const ADDRESS: u16 = 0x028;
 }
 
 #[bitfield(bits = 32)]
-#[derive(Copy, Clone, Debug, Format, Default)]
+#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
 pub struct TransmitInterruptStatus {
     /// TXQ Interrupt Pending
     #[skip(setters)]
@@ -341,12 +351,12 @@ pub struct TransmitInterruptStatus {
     #[skip(setters)]
     pub tfif: B31,
 }
-impl Register for TransmitInterruptStatus {
+impl RegisterAddress for TransmitInterruptStatus {
     const ADDRESS: u16 = 0x024;
 }
 
 #[bitfield(bits = 32)]
-#[derive(Copy, Clone, Debug, Format, Default)]
+#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
 pub struct TransmitAttemptInterruptStatus {
     /// TXQ Attempt Interrupt Pending
     #[skip(setters)]
@@ -356,12 +366,12 @@ pub struct TransmitAttemptInterruptStatus {
     #[skip(setters)]
     pub tfatif: B31,
 }
-impl Register for TransmitAttemptInterruptStatus {
+impl RegisterAddress for TransmitAttemptInterruptStatus {
     const ADDRESS: u16 = 0x02C;
 }
 
 #[bitfield(bits = 32)]
-#[derive(Copy, Clone, Debug, Format, Default)]
+#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
 pub struct TransmitRequest {
     /// Transmit Queue Message Send Request
     /// Will automatically clear when the message(s) queued is/are successfully sent
@@ -372,12 +382,12 @@ pub struct TransmitRequest {
     #[skip(setters)]
     pub txreq: B31,
 }
-impl Register for TransmitRequest {
+impl RegisterAddress for TransmitRequest {
     const ADDRESS: u16 = 0x030;
 }
 
 #[bitfield(bits = 32)]
-#[derive(Copy, Clone, Debug, Format, Default)]
+#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
 pub struct TransmitReceiveErrorCount {
     /// Receive Error Counter
     #[skip(setters)]
@@ -405,12 +415,12 @@ pub struct TransmitReceiveErrorCount {
     pub txbo: bool,
     #[skip] __: B10,
 }
-impl Register for TransmitReceiveErrorCount {
+impl RegisterAddress for TransmitReceiveErrorCount {
     const ADDRESS: u16 = 0x034;
 }
 
 #[bitfield(bits = 32)]
-#[derive(Copy, Clone, Debug, Format, Default)]
+#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
 pub struct BusDiagnostic0 {
     /// Nominal Bit Rate Receive Error Counter
     pub nrerrcnt: u8,
@@ -421,12 +431,12 @@ pub struct BusDiagnostic0 {
     /// Data Bit Rate Transmit Error Counter
     pub dterrcnt: u8,
 }
-impl Register for BusDiagnostic0 {
+impl RegisterAddress for BusDiagnostic0 {
     const ADDRESS: u16 = 0x038;
 }
 
 #[bitfield(bits = 32)]
-#[derive(Copy, Clone, Debug, Format, Default)]
+#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
 pub struct BusDiagnostic1 {
     /// Error-free Message Counter
     pub efmsgcnt: u16,
@@ -463,12 +473,12 @@ pub struct BusDiagnostic1 {
     /// During a transmission or reception, the specified DLC is larger than the PLSIZE of the FIFO element
     pub dlcmm: bool,
 }
-impl Register for BusDiagnostic1 {
+impl RegisterAddress for BusDiagnostic1 {
     const ADDRESS: u16 = 0x03C;
 }
 
 #[bitfield(bits = 32)]
-#[derive(Copy, Clone, Debug, Format, Default)]
+#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
 pub struct TransmitEventFIFOControl {
     /// Transmit Event FIFO Not Empty Interrupt Enable
     pub tefneie: bool,
@@ -494,12 +504,12 @@ pub struct TransmitEventFIFOControl {
     pub fsize: B5,
     #[skip] __: B3,
 }
-impl Register for TransmitEventFIFOControl {
+impl RegisterAddress for TransmitEventFIFOControl {
     const ADDRESS: u16 = 0x040;
 }
 
 #[bitfield(bits = 32)]
-#[derive(Copy, Clone, Debug, Format, Default)]
+#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
 pub struct TransmitEventFIFOStatus {
     /// Transmit Event FIFO Not Empty Interrupt Flag
     #[skip(setters)]
@@ -515,19 +525,19 @@ pub struct TransmitEventFIFOStatus {
     pub tefovif: bool,
     #[skip] __: B28,
 }
-impl Register for TransmitEventFIFOStatus {
+impl RegisterAddress for TransmitEventFIFOStatus {
     const ADDRESS: u16 = 0x044;
 }
 
 #[bitfield(bits = 32)]
-#[derive(Copy, Clone, Debug, Format, Default)]
+#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
 pub struct TransmitEventFIFOUserAddress {
     /// Transmit Event FIFO User Address
     /// The address where the next object is to be read (FIFO tail)
     #[skip(setters)]
     pub tefua: u32,
 }
-impl Register for TransmitEventFIFOUserAddress {
+impl RegisterAddress for TransmitEventFIFOUserAddress {
     const ADDRESS: u16 = 0x048;
 }
 
@@ -541,7 +551,7 @@ pub enum RetransmissionAttempts {
 }
 
 #[bitfield(bits = 32)]
-#[derive(Copy, Clone, Debug, Format, Default)]
+#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
 pub struct TransmitQueueControl {
     /// Transmit Queue Not Full Interrupt Enable
     pub txqnie: bool,
@@ -574,12 +584,12 @@ pub struct TransmitQueueControl {
     /// 0b000 = 8, 0b111 = 64
     pub plsize: B3,
 }
-impl Register for TransmitQueueControl {
+impl RegisterAddress for TransmitQueueControl {
     const ADDRESS: u16 = 0x050;
 }
 
 #[bitfield(bits = 32)]
-#[derive(Copy, Clone, Debug, Format, Default)]
+#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
 pub struct TransmitQueueStatus {
     /// Transmit Queue Not Full Interrupt Flag
     #[skip(setters)]
@@ -603,25 +613,25 @@ pub struct TransmitQueueStatus {
     pub txqci: B5,
     #[skip] __: B19,
 }
-impl Register for TransmitQueueStatus {
+impl RegisterAddress for TransmitQueueStatus {
     const ADDRESS: u16 = 0x054;
 }
 
 #[bitfield(bits = 32)]
-#[derive(Copy, Clone, Debug, Format, Default)]
+#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
 pub struct TransmitQueueUserAddress {
     /// TXQ User Address
     /// The address where the next message is to be written (TXQ head)
     #[skip(setters)]
     pub txqua: u32,
 }
-impl Register for TransmitQueueUserAddress {
+impl RegisterAddress for TransmitQueueUserAddress {
     const ADDRESS: u16 = 0x058;
 }
 
 #[bitfield(bits = 32)]
-#[derive(Copy, Clone, Debug, Format, Default)]
-pub struct FIFOControl {
+#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
+pub struct FIFOControlM {
     /// Transmit/Receive FIFO Not Full/Not Empty Interrupt Enable
     pub tfnrfnie: bool,
     /// Transmit/Receive FIFO Half Empty/Half Full Interrupt Enable
@@ -656,13 +666,17 @@ pub struct FIFOControl {
     /// Payload Size
     pub plsize: B3,
 }
-impl Register for FIFOControl {
-    const ADDRESS: u16 = 0x05C;
+pub struct FIFOControl<const M: u8> {}
+impl<const M: u8> RegisterAddress for FIFOControl<M> {
+    const ADDRESS: u16 = 0x05C + 12 * (M as u16 - 1); // M is 1-indexed
+}
+impl<const M: u8> Register for FIFOControl<M> {
+    type Bitfield = FIFOControlM;
 }
 
 #[bitfield(bits = 32)]
-#[derive(Copy, Clone, Debug, Format, Default)]
-pub struct FIFOStatus {
+#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
+pub struct FIFOStatusM {
     /// Transmit/Receive FIFO Not Full/Not Empty Interrupt Flag
     #[skip(setters)]
     pub tfnrfnif: bool,
@@ -687,26 +701,34 @@ pub struct FIFOStatus {
     pub fifoci: B5,
     #[skip] __: B19,
 }
-impl Register for FIFOStatus {
-    const ADDRESS: u16 = 0x060;
+pub struct FIFOStatus<const M: u8> {}
+impl<const M: u8> RegisterAddress for FIFOStatus<M> {
+    const ADDRESS: u16 = 0x060 + 12 * (M as u16 - 1); // M is 1-indexed
+}
+impl<const M: u8> Register for FIFOStatus<M> {
+    type Bitfield = FIFOStatusM;
 }
 
 #[bitfield(bits = 32)]
-#[derive(Copy, Clone, Debug, Format, Default)]
-pub struct FIFOUserAddress {
+#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
+pub struct FIFOUserAddressM {
     /// FIFO User Address
     /// The address where the next message is to be written (FIFO head)
     /// The address where the next message is to be read (FIFO tail)
     #[skip(setters)]
     pub fifoua: u32,
 }
-impl Register for FIFOUserAddress {
-    const ADDRESS: u16 = 0x064;
+pub struct FIFOUserAddress<const M: u8> {}
+impl<const M: u8> RegisterAddress for FIFOUserAddress<M> {
+    const ADDRESS: u16 = 0x064 + 12 * (M as u16 - 1); // M is 1-indexed
+}
+impl<const M: u8> Register for FIFOUserAddress<M> {
+    type Bitfield = FIFOUserAddressM;
 }
 
 #[bitfield(bits = 32)]
-#[derive(Copy, Clone, Debug, Format, Default)]
-pub struct FilterControl {
+#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
+pub struct FilterControlM {
     /// Pointer to FIFO when Filter 0 hits
     pub f0bp: B5,
     #[skip] __: B2,
@@ -728,13 +750,17 @@ pub struct FilterControl {
     /// Enable Filter 3 to Accept Messages
     pub flten3: bool,
 }
-impl Register for FilterControl {
-    const ADDRESS: u16 = 0x1D0;
+pub struct FilterControl<const M: u8> {}
+impl<const M: u8> RegisterAddress for FilterControl<M> {
+    const ADDRESS: u16 = 0x1D0 + 4 * (M as u16); // M is 0-indexed
+}
+impl<const M: u8> Register for FilterControl<M> {
+    type Bitfield = FilterControlM;
 }
 
 #[bitfield(bits = 32)]
-#[derive(Copy, Clone, Debug, Format, Default)]
-pub struct FilterObject {
+#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
+pub struct FilterObjectM {
     /// Standard Identifier filter
     pub sid: B11,
     /// Extended Identifier bits
@@ -745,13 +771,17 @@ pub struct FilterObject {
     pub exide: bool,
     #[skip] __: B1,
 }
-impl Register for FilterObject {
-    const ADDRESS: u16 = 0x1F0;
+pub struct FilterObject<const M: u8> {}
+impl<const M: u8> RegisterAddress for FilterObject<M> {
+    const ADDRESS: u16 = 0x1F0 + 8 * (M as u16); // M is 0-indexed
+}
+impl<const M: u8> Register for FilterObject<M> {
+    type Bitfield = FilterObjectM;
 }
 
 #[bitfield(bits = 32)]
-#[derive(Copy, Clone, Debug, Format, Default)]
-pub struct Mask {
+#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
+pub struct MaskM {
     /// Standard Identifier mask
     pub msid: B11,
     /// Extended Identifier mask
@@ -762,6 +792,10 @@ pub struct Mask {
     pub mide: bool,
     #[skip] __: B1,
 }
-impl Register for Mask {
-    const ADDRESS: u16 = 0x1F4;
+pub struct Mask<const M: u8> {}
+impl<const M: u8> RegisterAddress for Mask<M> {
+    const ADDRESS: u16 = 0x1F4 + 8 * (M as u16); // M is 0-indexed
+}
+impl<const M: u8> Register for Mask<M> {
+    type Bitfield = MaskM;
 }
