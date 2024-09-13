@@ -952,7 +952,7 @@ pub struct FIFOStatusM {
     #[skip] __: B19,
 }
 pub struct FIFOStatus<const M: u8> {
-    contents: FIFOStatusM,
+    pub contents: FIFOStatusM,
 }
 impl<const M: u8> RegisterAddress for FIFOStatus<M> {
     const ADDRESS: u16 = 0x060 + 12 * (M as u16 - 1); // M is 1-indexed
@@ -977,7 +977,7 @@ pub struct FIFOUserAddressM {
     pub fifoua: u32,
 }
 pub struct FIFOUserAddress<const M: u8> {
-    contents: FIFOUserAddressM,
+    pub contents: FIFOUserAddressM,
 }
 impl<const M: u8> RegisterAddress for FIFOUserAddress<M> {
     const ADDRESS: u16 = 0x064 + 12 * (M as u16 - 1); // M is 1-indexed
@@ -1017,7 +1017,7 @@ pub struct FilterControlM {
     pub flten3: bool,
 }
 pub struct FilterControl<const M: u8> {
-    contents: FilterControlM,
+    pub contents: FilterControlM,
 }
 impl<const M: u8> RegisterAddress for FilterControl<M> {
     const ADDRESS: u16 = 0x1D0 + 4 * (M as u16); // M is 0-indexed
@@ -1046,7 +1046,7 @@ pub struct FilterObjectM {
     #[skip] __: B1,
 }
 pub struct FilterObject<const M: u8> {
-    contents: FilterObjectM,
+    pub contents: FilterObjectM,
 }
 impl<const M: u8> RegisterAddress for FilterObject<M> {
     const ADDRESS: u16 = 0x1F0 + 8 * (M as u16); // M is 0-indexed
@@ -1075,7 +1075,7 @@ pub struct MaskM {
     #[skip] __: B1,
 }
 pub struct Mask<const M: u8> {
-    contents: MaskM,
+    pub contents: MaskM,
 }
 impl<const M: u8> RegisterAddress for Mask<M> {
     const ADDRESS: u16 = 0x1F4 + 8 * (M as u16); // M is 0-indexed
