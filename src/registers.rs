@@ -28,11 +28,34 @@ where
     fn into_bitfield(self) -> Self::Bitfield { self }
 }
 
+/// Data Length Code
+#[derive(BitfieldSpecifier, PartialEq, Eq, Copy, Clone, Debug, Format)]
+#[bits = 4]
+#[allow(non_camel_case_types)]
+pub enum DataLengthCode {
+    DLC_0 = 0,
+    DLC_1 = 1,
+    DLC_2 = 2,
+    DLC_3 = 3,
+    DLC_4 = 4,
+    DLC_5 = 5,
+    DLC_6 = 6,
+    DLC_7 = 7,
+    DLC_8 = 8,
+    DLC_12 = 9,
+    DLC_16 = 10,
+    DLC_20 = 11,
+    DLC_24 = 12,
+    DLC_32 = 13,
+    DLC_48 = 14,
+    DLC_64 = 15,
+}
+
 #[bitfield(bits = 64)]
 #[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
 pub struct TransmitMessageObjectHeader {
     /// Data Length Code
-    pub dlc: B4,
+    pub dlc: DataLengthCode,
     /// Identifier Extension Flag
     /// Distinguishes between base and extended format
     pub ide: bool,
@@ -59,7 +82,7 @@ pub struct TransmitMessageObjectHeader {
 #[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
 pub struct ReceiveMessageObjectHeader {
     /// Data Length Code
-    pub dlc: B4,
+    pub dlc: DataLengthCode,
     /// Identifier Extension Flag
     /// Distinguishes between base and extended format
     pub ide: bool,
