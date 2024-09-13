@@ -1,5 +1,3 @@
-#![allow(clippy::identity_op)] // FIXME https://github.com/Robbepop/modular-bitfield/issues/62
-
 use modular_bitfield::prelude::*;
 use defmt::Format;
 
@@ -7,14 +5,16 @@ pub trait RegisterAddress {
     const ADDRESS: u16;
 }
 
-pub trait Register: RegisterAddress {
+pub trait Register: RegisterAddress + Sized {
     type Bitfield: Specifier<Bytes=u32, InOut=Self::Bitfield>;
-    fn parse(data: &[u8]) -> Self::Bitfield {
+    fn from_bitfield(bitfield: Self::Bitfield) -> Self;
+    fn into_bitfield(self) -> Self::Bitfield;
+    fn parse(data: &[u8]) -> Self {
         let data = u32::from_le_bytes(data.try_into().unwrap());
-        Self::Bitfield::from_bytes(data).unwrap()
+        Self::from_bitfield(Self::Bitfield::from_bytes(data).unwrap())
     }
-    fn serialize(register: Self::Bitfield) -> [u8; 4] {
-        Self::Bitfield::into_bytes(register)
+    fn serialize(self) -> [u8; 4] {
+        Self::Bitfield::into_bytes(self.into_bitfield())
             .unwrap()
             .to_le_bytes()
     }
@@ -24,6 +24,64 @@ where
     T: Specifier<Bytes=u32, InOut=Self> + RegisterAddress
 {
     type Bitfield = Self;
+    fn from_bitfield(bitfield: Self::Bitfield) -> Self { bitfield }
+    fn into_bitfield(self) -> Self::Bitfield { self }
+}
+
+#[bitfield(bits = 64)]
+#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
+pub struct TransmitMessageObjectHeader {
+    /// Data Length Code
+    pub dlc: B4,
+    /// Identifier Extension Flag
+    /// Distinguishes between base and extended format
+    pub ide: bool,
+    /// Remote Transmission Request (not used for CAN-FD)
+    pub rtr: bool,
+    /// Bit Rate Switch
+    pub brs: bool,
+    /// FD Frame
+    pub fdf: bool,
+    /// Error Status Indicator
+    pub esi: bool,
+    /// Sequence to keep track of transmitted messages in Transmit Event FIFO
+    pub seq: B23,
+    /// Standard Identifier
+    pub sid: B11,
+    /// Extended Identifier
+    pub eid: B18,
+    /// In FD mode the standard ID can be extended to 12 bit using r1
+    pub sid11: bool,
+    #[skip] __: B2,
+}
+
+#[bitfield(bits = 64)]
+#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
+pub struct ReceiveMessageObjectHeader {
+    /// Data Length Code
+    pub dlc: B4,
+    /// Identifier Extension Flag
+    /// Distinguishes between base and extended format
+    pub ide: bool,
+    /// Remote Transmission Request (not used for CAN-FD)
+    pub rtr: bool,
+    /// Bit Rate Switch
+    pub brs: bool,
+    /// FD Frame
+    pub fdf: bool,
+    /// Error Status Indicator
+    pub esi: bool,
+    #[skip] __: B2,
+    /// Filter Hit, number of filter that matched
+    pub filthit: B5,
+    #[skip] __: B16,
+    /// Standard Identifier
+    pub sid: B11,
+    /// Extended Identifier
+    pub eid: B18,
+    /// In FD mode the standard ID can be extended to 12 bit using r1
+    pub sid11: bool,
+    #[skip] __: B2,
 }
 
 /// Clock Output Divisor
@@ -826,12 +884,21 @@ pub struct FIFOControlM {
     /// Payload Size
     pub plsize: B3,
 }
-pub struct FIFOControl<const M: u8> {}
+pub struct FIFOControl<const M: u8> {
+    pub contents: FIFOControlM,
+}
+
 impl<const M: u8> RegisterAddress for FIFOControl<M> {
     const ADDRESS: u16 = 0x05C + 12 * (M as u16 - 1); // M is 1-indexed
 }
 impl<const M: u8> Register for FIFOControl<M> {
     type Bitfield = FIFOControlM;
+    fn from_bitfield(bitfield: Self::Bitfield) -> Self {
+        Self { contents: bitfield }
+    }
+    fn into_bitfield(self) -> Self::Bitfield {
+        self.contents
+    }
 }
 
 #[bitfield(bits = 32)]
@@ -861,12 +928,20 @@ pub struct FIFOStatusM {
     pub fifoci: B5,
     #[skip] __: B19,
 }
-pub struct FIFOStatus<const M: u8> {}
+pub struct FIFOStatus<const M: u8> {
+    contents: FIFOStatusM,
+}
 impl<const M: u8> RegisterAddress for FIFOStatus<M> {
     const ADDRESS: u16 = 0x060 + 12 * (M as u16 - 1); // M is 1-indexed
 }
 impl<const M: u8> Register for FIFOStatus<M> {
     type Bitfield = FIFOStatusM;
+    fn from_bitfield(bitfield: Self::Bitfield) -> Self {
+        Self { contents: bitfield }
+    }
+    fn into_bitfield(self) -> Self::Bitfield {
+        self.contents
+    }
 }
 
 #[bitfield(bits = 32)]
@@ -878,12 +953,20 @@ pub struct FIFOUserAddressM {
     #[skip(setters)]
     pub fifoua: u32,
 }
-pub struct FIFOUserAddress<const M: u8> {}
+pub struct FIFOUserAddress<const M: u8> {
+    contents: FIFOUserAddressM,
+}
 impl<const M: u8> RegisterAddress for FIFOUserAddress<M> {
     const ADDRESS: u16 = 0x064 + 12 * (M as u16 - 1); // M is 1-indexed
 }
 impl<const M: u8> Register for FIFOUserAddress<M> {
     type Bitfield = FIFOUserAddressM;
+    fn from_bitfield(bitfield: Self::Bitfield) -> Self {
+        Self { contents: bitfield }
+    }
+    fn into_bitfield(self) -> Self::Bitfield {
+        self.contents
+    }
 }
 
 #[bitfield(bits = 32)]
@@ -910,12 +993,20 @@ pub struct FilterControlM {
     /// Enable Filter 3 to Accept Messages
     pub flten3: bool,
 }
-pub struct FilterControl<const M: u8> {}
+pub struct FilterControl<const M: u8> {
+    contents: FilterControlM,
+}
 impl<const M: u8> RegisterAddress for FilterControl<M> {
     const ADDRESS: u16 = 0x1D0 + 4 * (M as u16); // M is 0-indexed
 }
 impl<const M: u8> Register for FilterControl<M> {
     type Bitfield = FilterControlM;
+    fn from_bitfield(bitfield: Self::Bitfield) -> Self {
+        Self { contents: bitfield }
+    }
+    fn into_bitfield(self) -> Self::Bitfield {
+        self.contents
+    }
 }
 
 #[bitfield(bits = 32)]
@@ -931,12 +1022,20 @@ pub struct FilterObjectM {
     pub exide: bool,
     #[skip] __: B1,
 }
-pub struct FilterObject<const M: u8> {}
+pub struct FilterObject<const M: u8> {
+    contents: FilterObjectM,
+}
 impl<const M: u8> RegisterAddress for FilterObject<M> {
     const ADDRESS: u16 = 0x1F0 + 8 * (M as u16); // M is 0-indexed
 }
 impl<const M: u8> Register for FilterObject<M> {
     type Bitfield = FilterObjectM;
+    fn from_bitfield(bitfield: Self::Bitfield) -> Self {
+        Self { contents: bitfield }
+    }
+    fn into_bitfield(self) -> Self::Bitfield {
+        self.contents
+    }
 }
 
 #[bitfield(bits = 32)]
@@ -952,10 +1051,18 @@ pub struct MaskM {
     pub mide: bool,
     #[skip] __: B1,
 }
-pub struct Mask<const M: u8> {}
+pub struct Mask<const M: u8> {
+    contents: MaskM,
+}
 impl<const M: u8> RegisterAddress for Mask<M> {
     const ADDRESS: u16 = 0x1F4 + 8 * (M as u16); // M is 0-indexed
 }
 impl<const M: u8> Register for Mask<M> {
     type Bitfield = MaskM;
+    fn from_bitfield(bitfield: Self::Bitfield) -> Self {
+        Self { contents: bitfield }
+    }
+    fn into_bitfield(self) -> Self::Bitfield {
+        self.contents
+    }
 }

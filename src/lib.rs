@@ -1,7 +1,6 @@
 #![no_std]
 use core::fmt::Debug;
-use embedded_hal_async::spi::SpiDevice;
-
+use embedded_hal_async::spi::{ SpiDevice, Operation };
 use crate::registers::*;
 
 /// Register bitfields
@@ -27,7 +26,7 @@ impl<SPI: SpiDevice> MCP25xxFD<SPI> {
     }
 
     /// Read a single register
-    pub async fn read_register<R: Register>(&mut self) -> Result<R::Bitfield, ()> {
+    pub async fn read_register<R: Register>(&mut self) -> Result<R, ()> {
         let tx = Instruction::Read.header(R::ADDRESS);
         let mut rx = [0u8; 6];
         self.spi.transfer(&mut rx, &tx).await.unwrap(); // TODO: SPI error handling
@@ -36,15 +35,44 @@ impl<SPI: SpiDevice> MCP25xxFD<SPI> {
     }
 
     /// Write a single register
-    pub async fn write_register<R: Register<Bitfield = R>>(&mut self, register: R) -> Result<(), ()> {
-        let mut tx = [0u8; 6];
-        {
-            let (header, data) = tx.split_at_mut(2);
-            header.copy_from_slice(&Instruction::Write.header(R::ADDRESS));
-            data.copy_from_slice(&R::serialize(register));
-        }
-        self.spi.write(&tx).await.unwrap(); // TODO: SPI error handling
+    pub async fn write_register<R: Register>(&mut self, register: R) -> Result<(), ()> {
+        self.spi.transaction(&mut [
+            Operation::Write(&Instruction::Write.header(R::ADDRESS)),
+            Operation::Write(&R::serialize(register)),
+        ]).await.unwrap(); // TODO: SPI error handling
 
+        Ok(())
+    }
+
+    pub async fn read_bytes<const B: usize>(&mut self, address: u16) -> Result<[u8; B], ()> {
+        let tx = Instruction::Read.header(address);
+        let mut rx = [0u8; B];
+        self.spi.transaction(&mut [
+            Operation::Write(&tx),
+            Operation::Read(&mut rx),
+        ]).await.unwrap(); // TODO: SPI error handling
+
+        Ok(rx)
+    }
+
+    pub async fn write_bytes(&mut self, address: u16, data: &[u8]) -> Result<(), ()> {
+        self.spi.transaction(&mut [
+            Operation::Write(&Instruction::Write.header(address)),
+            Operation::Write(data),
+        ]).await.unwrap(); // TODO: SPI error handling
+
+        Ok(())
+    }
+
+    pub async fn initialize_ram(&mut self, data: u8) -> Result<(), ()> {
+        const RAM_START: u16 = 0x400;
+        const RAM_SIZE: u16 = 2048;
+        const INIT_INCREMENT: usize = 64; // Write 64 bytes at a time
+        let bytes = [data; INIT_INCREMENT];
+
+        for addr in (RAM_START..RAM_START + RAM_SIZE).step_by(INIT_INCREMENT) {
+            self.write_bytes(addr, &bytes).await?;
+        }
         Ok(())
     }
 }
