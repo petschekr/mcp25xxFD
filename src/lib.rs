@@ -56,8 +56,9 @@ impl<SPI: SpiDevice> MCP25xxFD<SPI> {
     }
 
     pub async fn write_bytes(&mut self, address: u16, data: &[u8]) -> Result<(), ()> {
+        const RAM_START: u16 = 0x400;
         self.spi.transaction(&mut [
-            Operation::Write(&Instruction::Write.header(address)),
+            Operation::Write(&Instruction::Write.header(RAM_START + address)),
             Operation::Write(data),
         ]).await.unwrap(); // TODO: SPI error handling
 
@@ -65,12 +66,11 @@ impl<SPI: SpiDevice> MCP25xxFD<SPI> {
     }
 
     pub async fn initialize_ram(&mut self, data: u8) -> Result<(), ()> {
-        const RAM_START: u16 = 0x400;
         const RAM_SIZE: u16 = 2048;
         const INIT_INCREMENT: usize = 64; // Write 64 bytes at a time
         let bytes = [data; INIT_INCREMENT];
 
-        for addr in (RAM_START..RAM_START + RAM_SIZE).step_by(INIT_INCREMENT) {
+        for addr in (0..RAM_SIZE).step_by(INIT_INCREMENT) {
             self.write_bytes(addr, &bytes).await?;
         }
         Ok(())
