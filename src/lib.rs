@@ -7,6 +7,9 @@ use crate::registers::*;
 /// Register bitfields
 pub mod registers;
 
+const RAM_START: u16 = 0x400;
+const RAM_SIZE: u16 = 2048;
+
 /// Either a MCP2517, MCP2518 or MCP251863 CAN-FD controller
 pub struct MCP25xxFD<SPI, Input: InputPin> {
     spi: SPI,
@@ -49,8 +52,10 @@ impl<SPI: SpiDevice, Input: InputPin> MCP25xxFD<SPI, Input> {
     }
 
     pub async fn read_bytes<const B: usize>(&mut self, address: u16) -> Result<[u8; B], ()> {
-        let tx = Instruction::Read.header(address);
+        assert_eq!(B % 4, 0, "Must read in multiples of 4 data bytes");
+        let tx = Instruction::Read.header(RAM_START + address);
         let mut rx = [0u8; B];
+
         self.spi.transaction(&mut [
             Operation::Write(&tx),
             Operation::Read(&mut rx),
@@ -60,9 +65,11 @@ impl<SPI: SpiDevice, Input: InputPin> MCP25xxFD<SPI, Input> {
     }
 
     pub async fn write_bytes(&mut self, address: u16, data: &[u8]) -> Result<(), ()> {
-        const RAM_START: u16 = 0x400;
+        assert_eq!(data.len() % 4, 0, "Must write in multiples of 4 data bytes");
+        let tx = Instruction::Write.header(RAM_START + address);
+
         self.spi.transaction(&mut [
-            Operation::Write(&Instruction::Write.header(RAM_START + address)),
+            Operation::Write(&tx),
             Operation::Write(data),
         ]).await.unwrap(); // TODO: SPI error handling
 
@@ -70,7 +77,6 @@ impl<SPI: SpiDevice, Input: InputPin> MCP25xxFD<SPI, Input> {
     }
 
     pub async fn initialize_ram(&mut self, data: u8) -> Result<(), ()> {
-        const RAM_SIZE: u16 = 2048;
         const INIT_INCREMENT: usize = 64; // Write 64 bytes at a time
         let bytes = [data; INIT_INCREMENT];
 
