@@ -1,20 +1,24 @@
 #![no_std]
 use core::fmt::Debug;
 use embedded_hal_async::spi::{ SpiDevice, Operation };
+use embedded_hal::digital::InputPin;
 use crate::registers::*;
 
 /// Register bitfields
 pub mod registers;
 
 /// Either a MCP2517, MCP2518 or MCP251863 CAN-FD controller
-pub struct MCP25xxFD<SPI> {
+pub struct MCP25xxFD<SPI, Input: InputPin> {
     spi: SPI,
+    #[allow(unused)]
+    interrupt: Option<Input>,
 }
 
-impl<SPI: SpiDevice> MCP25xxFD<SPI> {
-    pub fn new(spi: SPI) -> Self {
+impl<SPI: SpiDevice, Input: InputPin> MCP25xxFD<SPI, Input> {
+    pub fn new(spi: SPI, interrupt: Option<Input>) -> Self {
         Self {
             spi,
+            interrupt,
         }
     }
 
