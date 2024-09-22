@@ -50,10 +50,40 @@ pub enum DataLengthCode {
     DLC_48 = 14,
     DLC_64 = 15,
 }
+impl DataLengthCode {
+    pub const fn bytes(&self) -> usize {
+        match self {
+            DataLengthCode::DLC_0 => 0,
+            DataLengthCode::DLC_1 => 1,
+            DataLengthCode::DLC_2 => 2,
+            DataLengthCode::DLC_3 => 3,
+            DataLengthCode::DLC_4 => 4,
+            DataLengthCode::DLC_5 => 5,
+            DataLengthCode::DLC_6 => 6,
+            DataLengthCode::DLC_7 => 7,
+            DataLengthCode::DLC_8 => 8,
+            DataLengthCode::DLC_12 => 12,
+            DataLengthCode::DLC_16 => 16,
+            DataLengthCode::DLC_20 => 20,
+            DataLengthCode::DLC_24 => 24,
+            DataLengthCode::DLC_32 => 32,
+            DataLengthCode::DLC_48 => 48,
+            DataLengthCode::DLC_64 => 64,
+        }
+    }
+}
 
 #[bitfield(bits = 64)]
 #[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
 pub struct TransmitMessageObjectHeader {
+    /// Standard Identifier
+    pub sid: B11,
+    /// Extended Identifier
+    pub eid: B18,
+    /// In FD mode the standard ID can be extended to 12 bit using r1
+    pub sid11: bool,
+    #[skip] __: B2,
+
     /// Data Length Code
     pub dlc: DataLengthCode,
     /// Identifier Extension Flag
@@ -69,6 +99,11 @@ pub struct TransmitMessageObjectHeader {
     pub esi: bool,
     /// Sequence to keep track of transmitted messages in Transmit Event FIFO
     pub seq: B23,
+}
+
+#[bitfield(bits = 64)]
+#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
+pub struct ReceiveMessageObjectHeader {
     /// Standard Identifier
     pub sid: B11,
     /// Extended Identifier
@@ -76,11 +111,7 @@ pub struct TransmitMessageObjectHeader {
     /// In FD mode the standard ID can be extended to 12 bit using r1
     pub sid11: bool,
     #[skip] __: B2,
-}
 
-#[bitfield(bits = 64)]
-#[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
-pub struct ReceiveMessageObjectHeader {
     /// Data Length Code
     pub dlc: DataLengthCode,
     /// Identifier Extension Flag
@@ -98,13 +129,6 @@ pub struct ReceiveMessageObjectHeader {
     /// Filter Hit, number of filter that matched
     pub filthit: B5,
     #[skip] __: B16,
-    /// Standard Identifier
-    pub sid: B11,
-    /// Extended Identifier
-    pub eid: B18,
-    /// In FD mode the standard ID can be extended to 12 bit using r1
-    pub sid11: bool,
-    #[skip] __: B2,
 }
 
 /// Clock Output Divisor
@@ -561,9 +585,68 @@ impl RegisterAddress for Interrupts {
 pub struct ReceiveInterruptStatus {
     #[skip] __: B1,
     /// Receive FIFO Interrupt Pending
-    /// 'or’ of enabled RXFIFO flags; flags will be cleared when the condition of the FIFO terminates
     #[skip(setters)]
-    pub rfif: B31,
+    pub fifo1: bool,
+    #[skip(setters)]
+    pub fifo2: bool,
+    #[skip(setters)]
+    pub fifo3: bool,
+    #[skip(setters)]
+    pub fifo4: bool,
+    #[skip(setters)]
+    pub fifo5: bool,
+    #[skip(setters)]
+    pub fifo6: bool,
+    #[skip(setters)]
+    pub fifo7: bool,
+    #[skip(setters)]
+    pub fifo8: bool,
+    #[skip(setters)]
+    pub fifo9: bool,
+    #[skip(setters)]
+    pub fifo10: bool,
+    #[skip(setters)]
+    pub fifo11: bool,
+    #[skip(setters)]
+    pub fifo12: bool,
+    #[skip(setters)]
+    pub fifo13: bool,
+    #[skip(setters)]
+    pub fifo14: bool,
+    #[skip(setters)]
+    pub fifo15: bool,
+    #[skip(setters)]
+    pub fifo16: bool,
+    #[skip(setters)]
+    pub fifo17: bool,
+    #[skip(setters)]
+    pub fifo18: bool,
+    #[skip(setters)]
+    pub fifo19: bool,
+    #[skip(setters)]
+    pub fifo20: bool,
+    #[skip(setters)]
+    pub fifo21: bool,
+    #[skip(setters)]
+    pub fifo22: bool,
+    #[skip(setters)]
+    pub fifo23: bool,
+    #[skip(setters)]
+    pub fifo24: bool,
+    #[skip(setters)]
+    pub fifo25: bool,
+    #[skip(setters)]
+    pub fifo26: bool,
+    #[skip(setters)]
+    pub fifo27: bool,
+    #[skip(setters)]
+    pub fifo28: bool,
+    #[skip(setters)]
+    pub fifo29: bool,
+    #[skip(setters)]
+    pub fifo30: bool,
+    #[skip(setters)]
+    pub fifo31: bool,
 }
 impl RegisterAddress for ReceiveInterruptStatus {
     const ADDRESS: u16 = 0x020;
@@ -617,11 +700,69 @@ pub struct TransmitRequest {
     /// Transmit Queue Message Send Request
     /// Will automatically clear when the message(s) queued is/are successfully sent
     #[skip(setters)]
-    pub txqreq: bool,
-    /// Transmit FIFO Message Send Request
-    /// Will automatically clear when the message(s) queued is/are successfully sent
+    pub txq: bool,
     #[skip(setters)]
-    pub txreq: B31,
+    pub fifo1: bool,
+    #[skip(setters)]
+    pub fifo2: bool,
+    #[skip(setters)]
+    pub fifo3: bool,
+    #[skip(setters)]
+    pub fifo4: bool,
+    #[skip(setters)]
+    pub fifo5: bool,
+    #[skip(setters)]
+    pub fifo6: bool,
+    #[skip(setters)]
+    pub fifo7: bool,
+    #[skip(setters)]
+    pub fifo8: bool,
+    #[skip(setters)]
+    pub fifo9: bool,
+    #[skip(setters)]
+    pub fifo10: bool,
+    #[skip(setters)]
+    pub fifo11: bool,
+    #[skip(setters)]
+    pub fifo12: bool,
+    #[skip(setters)]
+    pub fifo13: bool,
+    #[skip(setters)]
+    pub fifo14: bool,
+    #[skip(setters)]
+    pub fifo15: bool,
+    #[skip(setters)]
+    pub fifo16: bool,
+    #[skip(setters)]
+    pub fifo17: bool,
+    #[skip(setters)]
+    pub fifo18: bool,
+    #[skip(setters)]
+    pub fifo19: bool,
+    #[skip(setters)]
+    pub fifo20: bool,
+    #[skip(setters)]
+    pub fifo21: bool,
+    #[skip(setters)]
+    pub fifo22: bool,
+    #[skip(setters)]
+    pub fifo23: bool,
+    #[skip(setters)]
+    pub fifo24: bool,
+    #[skip(setters)]
+    pub fifo25: bool,
+    #[skip(setters)]
+    pub fifo26: bool,
+    #[skip(setters)]
+    pub fifo27: bool,
+    #[skip(setters)]
+    pub fifo28: bool,
+    #[skip(setters)]
+    pub fifo29: bool,
+    #[skip(setters)]
+    pub fifo30: bool,
+    #[skip(setters)]
+    pub fifo31: bool,
 }
 impl RegisterAddress for TransmitRequest {
     const ADDRESS: u16 = 0x030;
@@ -791,6 +932,20 @@ pub enum RetransmissionAttempts {
     Unlimited2 = 0b11,
 }
 
+#[derive(BitfieldSpecifier, PartialEq, Eq, Copy, Clone, Debug, Format)]
+#[bits = 3]
+pub enum PayloadSize {
+    Bytes8 = 0b000,
+    Bytes12 = 0b001,
+    Bytes16 = 0b010,
+    Bytes20 = 0b011,
+    Bytes24 = 0b100,
+    Bytes32 = 0b101,
+    Bytes48 = 0b110,
+    Bytes64 = 0b111,
+}
+
+
 #[bitfield(bits = 32)]
 #[derive(BitfieldSpecifier, Copy, Clone, Debug, Format, Default)]
 pub struct TransmitQueueControl {
@@ -822,8 +977,7 @@ pub struct TransmitQueueControl {
     /// Begins at 0b0000 = 1
     pub fsize: B5,
     /// Payload Size
-    /// 0b000 = 8, 0b111 = 64
-    pub plsize: B3,
+    pub plsize: PayloadSize,
 }
 impl RegisterAddress for TransmitQueueControl {
     const ADDRESS: u16 = 0x050;
@@ -893,7 +1047,7 @@ pub struct FIFOControlM {
     /// Increment Head/Tail
     pub uinc: bool,
     /// Message Send Request
-    pub rxreq: bool,
+    pub txreq: bool,
     /// FIFO Reset
     pub freset: bool,
     #[skip] __: B5,
@@ -905,7 +1059,7 @@ pub struct FIFOControlM {
     /// FIFO Size
     pub fsize: B5,
     /// Payload Size
-    pub plsize: B3,
+    pub plsize: PayloadSize,
 }
 pub struct FIFOControl<const M: u8> {
     pub contents: FIFOControlM,
