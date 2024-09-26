@@ -127,7 +127,7 @@ impl<SPI: SpiDevice, Input: Wait> MCP25xxFD<SPI, Input> {
         self.write_register(mask_config).await?;
 
         // Enable the filter
-        let filter_control_address = FilterControl::<0>::ADDRESS + (RXFIFO as u16 - 1) * 8;
+        let filter_control_address = FilterControl::<0>::ADDRESS + (M as u16);
         self.write_register_byte(filter_control_address,(1 << 7) | RXFIFO).await?;
 
         Ok(())
