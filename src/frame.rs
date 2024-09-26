@@ -6,7 +6,7 @@ pub struct Frame {
     id: Id,
     dlc: DataLengthCode,
     data: [u8; 64],
-    sequence_number: u32,
+    sequence_number: Option<u32>,
 }
 
 impl Frame {
@@ -17,12 +17,12 @@ impl Frame {
             id: id.into(),
             dlc: DataLengthCode::best_fit(data_slice.len())?,
             data,
-            sequence_number: 0,
+            sequence_number: None,
         })
     }
     #[inline]
     pub fn with_sequence_number(mut self, sequence_number: u32) -> Self {
-        self.sequence_number = sequence_number;
+        self.sequence_number = Some(sequence_number);
         self
     }
     #[inline]
@@ -44,7 +44,7 @@ impl Frame {
     #[inline]
     pub fn data(&self) -> &[u8] { &self.data[..self.dlc.bytes()] }
     #[inline]
-    pub fn sequence_number(&self) -> u32 { self.sequence_number }
+    pub fn sequence_number(&self) -> Option<u32> { self.sequence_number }
 
     pub(crate) fn as_components(&self) -> (TransmitMessageObjectHeader, &[u8]) {
         let (sid, eid) = match self.id {
@@ -55,7 +55,7 @@ impl Frame {
         let header = TransmitMessageObjectHeader::new()
             .with_sid(sid)
             .with_eid(eid)
-            .with_seq(self.sequence_number)
+            .with_seq(self.sequence_number.unwrap_or(0))
             .with_ide(eid > 0)
             .with_fdf(is_fd_frame)
             .with_brs(is_fd_frame) // Always send FD frames at the data bitrate
@@ -71,7 +71,7 @@ impl Frame {
             },
             dlc: header.dlc(),
             data,
-            sequence_number: 0,
+            sequence_number: None,
         }
     }
 }

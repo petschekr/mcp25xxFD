@@ -1,4 +1,4 @@
-use embedded_can::Id;
+use embedded_can::{Id, StandardId};
 use crate::registers::{PayloadSize, RetransmissionAttempts};
 
 #[derive(Clone, Debug)]
@@ -33,6 +33,22 @@ pub struct FIFOConfig<const M: u8> {
     pub tx_attempts: RetransmissionAttempts,
     pub priority: u8,
 }
+impl<const M: u8> FIFOConfig<M> {
+    pub fn rx_with_size(size: u8, payload_size: PayloadSize) -> Self {
+        Self {
+            size,
+            payload_size,
+            transmit: false,
+            tx_attempts: RetransmissionAttempts::Unlimited1,
+            priority: 0,
+        }
+    }
+    pub fn tx_with_size(size: u8, payload_size: PayloadSize) -> Self {
+        let mut fifo = Self::rx_with_size(size, payload_size);
+        fifo.transmit = true;
+        fifo
+    }
+}
 
 pub struct FilterConfig<const M: u8, const RXFIFO: u8> {
     pub match_only_extended: bool,
@@ -60,6 +76,12 @@ impl<const M: u8> MaskConfig<M> {
             match_id_type: false,
             id: id.into(),
         }
+    }
+    pub fn match_exact() -> Self {
+        Self::from_id(StandardId::MAX)
+    }
+    pub fn match_anything() -> Self {
+        Self::from_id(StandardId::ZERO)
     }
 }
 
