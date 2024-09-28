@@ -233,11 +233,7 @@ impl<SPI: SpiDevice> MCP25xxFD<SPI> {
         Ok(())
     }
 
-    async fn get_rx_frame<const M: u8>(&mut self, fifo: Option<u8>) -> Result<Option<(u8, Frame)>, Error<SPI>> {
-        if M != fifo.unwrap_or(M) {
-            return Ok(None);
-        }
-
+    async fn get_rx_frame<const M: u8>(&mut self) -> Result<Option<(u8, Frame)>, Error<SPI>> {
         // Get the RAM address of the message
         let rx_addr = self.read_register::<FIFOUserAddress<M>>().await?.contents.fifoua() as u16;
 
@@ -253,57 +249,64 @@ impl<SPI: SpiDevice> MCP25xxFD<SPI> {
         Ok(Some((M, frame)))
     }
 
-    pub async fn receive(&mut self, fifo: Option<u8>) -> Result<(u8, Frame), Error<SPI>> {
-        loop {
-            let mut interrupts: Interrupts = self.read_register().await?;
-            if interrupts.cerrif() {
-                // CAN Bus error
-                interrupts.set_cerrif(false);
-                self.write_register(interrupts).await?;
-                return Err(Error::ControllerError("CAN Bus error!"));
-            }
-            if interrupts.rxif() {
-                let rx_interrupt_status: ReceiveInterruptStatus = self.read_register().await?;
+    async fn receive_first_fifo(&mut self, fifo: u8, rx_interrupts: &ReceiveInterruptStatus) -> Result<Option<(u8, Frame)>, Error<SPI>> {
+        match fifo {
+             1 if rx_interrupts.fifo1() =>  self.get_rx_frame::<1>().await,
+             2 if rx_interrupts.fifo2() =>  self.get_rx_frame::<2>().await,
+             3 if rx_interrupts.fifo3() =>  self.get_rx_frame::<3>().await,
+             4 if rx_interrupts.fifo4() =>  self.get_rx_frame::<4>().await,
+             5 if rx_interrupts.fifo5() =>  self.get_rx_frame::<5>().await,
+             6 if rx_interrupts.fifo6() =>  self.get_rx_frame::<6>().await,
+             7 if rx_interrupts.fifo7() =>  self.get_rx_frame::<7>().await,
+             8 if rx_interrupts.fifo8() =>  self.get_rx_frame::<8>().await,
+             9 if rx_interrupts.fifo9() =>  self.get_rx_frame::<9>().await,
+            10 if rx_interrupts.fifo10() => self.get_rx_frame::<10>().await,
+            11 if rx_interrupts.fifo11() => self.get_rx_frame::<11>().await,
+            12 if rx_interrupts.fifo12() => self.get_rx_frame::<12>().await,
+            13 if rx_interrupts.fifo13() => self.get_rx_frame::<13>().await,
+            14 if rx_interrupts.fifo14() => self.get_rx_frame::<14>().await,
+            15 if rx_interrupts.fifo15() => self.get_rx_frame::<15>().await,
+            16 if rx_interrupts.fifo16() => self.get_rx_frame::<16>().await,
+            17 if rx_interrupts.fifo17() => self.get_rx_frame::<17>().await,
+            18 if rx_interrupts.fifo18() => self.get_rx_frame::<18>().await,
+            19 if rx_interrupts.fifo19() => self.get_rx_frame::<19>().await,
+            20 if rx_interrupts.fifo20() => self.get_rx_frame::<20>().await,
+            21 if rx_interrupts.fifo21() => self.get_rx_frame::<21>().await,
+            22 if rx_interrupts.fifo22() => self.get_rx_frame::<22>().await,
+            23 if rx_interrupts.fifo23() => self.get_rx_frame::<23>().await,
+            24 if rx_interrupts.fifo24() => self.get_rx_frame::<24>().await,
+            25 if rx_interrupts.fifo25() => self.get_rx_frame::<25>().await,
+            26 if rx_interrupts.fifo26() => self.get_rx_frame::<26>().await,
+            27 if rx_interrupts.fifo27() => self.get_rx_frame::<27>().await,
+            28 if rx_interrupts.fifo28() => self.get_rx_frame::<28>().await,
+            29 if rx_interrupts.fifo29() => self.get_rx_frame::<29>().await,
+            30 if rx_interrupts.fifo30() => self.get_rx_frame::<30>().await,
+            31 if rx_interrupts.fifo31() => self.get_rx_frame::<31>().await,
+            _ => Ok(None),
+        }
+    }
 
-                // Map dynamic FIFO number to const generic
-                let frame = match rx_interrupt_status {
-                    i if i.fifo1() => self.get_rx_frame::<1>(fifo).await?,
-                    i if i.fifo2() => self.get_rx_frame::<2>(fifo).await?,
-                    i if i.fifo3() => self.get_rx_frame::<3>(fifo).await?,
-                    i if i.fifo4() => self.get_rx_frame::<4>(fifo).await?,
-                    i if i.fifo5() => self.get_rx_frame::<5>(fifo).await?,
-                    i if i.fifo6() => self.get_rx_frame::<6>(fifo).await?,
-                    i if i.fifo7() => self.get_rx_frame::<7>(fifo).await?,
-                    i if i.fifo8() => self.get_rx_frame::<8>(fifo).await?,
-                    i if i.fifo9() => self.get_rx_frame::<9>(fifo).await?,
-                    i if i.fifo10() => self.get_rx_frame::<10>(fifo).await?,
-                    i if i.fifo11() => self.get_rx_frame::<11>(fifo).await?,
-                    i if i.fifo12() => self.get_rx_frame::<12>(fifo).await?,
-                    i if i.fifo13() => self.get_rx_frame::<13>(fifo).await?,
-                    i if i.fifo14() => self.get_rx_frame::<14>(fifo).await?,
-                    i if i.fifo15() => self.get_rx_frame::<15>(fifo).await?,
-                    i if i.fifo16() => self.get_rx_frame::<16>(fifo).await?,
-                    i if i.fifo17() => self.get_rx_frame::<17>(fifo).await?,
-                    i if i.fifo18() => self.get_rx_frame::<18>(fifo).await?,
-                    i if i.fifo19() => self.get_rx_frame::<19>(fifo).await?,
-                    i if i.fifo20() => self.get_rx_frame::<20>(fifo).await?,
-                    i if i.fifo21() => self.get_rx_frame::<21>(fifo).await?,
-                    i if i.fifo22() => self.get_rx_frame::<22>(fifo).await?,
-                    i if i.fifo23() => self.get_rx_frame::<23>(fifo).await?,
-                    i if i.fifo24() => self.get_rx_frame::<24>(fifo).await?,
-                    i if i.fifo25() => self.get_rx_frame::<25>(fifo).await?,
-                    i if i.fifo26() => self.get_rx_frame::<26>(fifo).await?,
-                    i if i.fifo27() => self.get_rx_frame::<27>(fifo).await?,
-                    i if i.fifo28() => self.get_rx_frame::<28>(fifo).await?,
-                    i if i.fifo29() => self.get_rx_frame::<29>(fifo).await?,
-                    i if i.fifo30() => self.get_rx_frame::<30>(fifo).await?,
-                    i if i.fifo31() => self.get_rx_frame::<31>(fifo).await?,
-                    _ => continue,
-                };
-                if let Some(frame) = frame {
-                    return Ok(frame);
+    pub async fn receive(&mut self, fifo_restriction: Option<u8>) -> Result<Option<(u8, Frame)>, Error<SPI>> {
+        let mut interrupts: Interrupts = self.read_register().await?;
+        if interrupts.cerrif() {
+            // CAN Bus error
+            interrupts.set_cerrif(false);
+            self.write_register(interrupts).await?;
+            Err(Error::ControllerError("CAN Bus error!"))
+        }
+        else if interrupts.rxif() {
+            let rx_interrupts: ReceiveInterruptStatus = self.read_register().await?;
+
+            let mut frame = None;
+            for i in 1..=31 {
+                if frame.is_none() && fifo_restriction.unwrap_or(i) == i {
+                    frame = self.receive_first_fifo(i, &rx_interrupts).await?;
                 }
             }
+            Ok(frame)
+        }
+        else {
+            Ok(None)
         }
     }
 }
