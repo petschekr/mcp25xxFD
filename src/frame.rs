@@ -2,6 +2,7 @@ use embedded_can::{ExtendedId, Id, StandardId};
 use crate::registers::{DataLengthCode, ReceiveMessageObjectHeader, TransmitMessageObjectHeader};
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Frame {
     id: Id,
     dlc: DataLengthCode,

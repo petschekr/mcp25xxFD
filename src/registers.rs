@@ -29,6 +29,7 @@ where
 
 /// Data Length Code
 #[derive(BitfieldSpecifier, PartialEq, Eq, Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[bits = 4]
 #[allow(non_camel_case_types)]
 pub enum DataLengthCode {
@@ -944,6 +945,7 @@ impl RegisterAddress for TransmitEventFIFOUserAddress {
 }
 
 #[derive(BitfieldSpecifier, PartialEq, Eq, Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[bits = 2]
 pub enum RetransmissionAttempts {
     Disable = 0b00,
@@ -953,6 +955,7 @@ pub enum RetransmissionAttempts {
 }
 
 #[derive(BitfieldSpecifier, PartialEq, Eq, Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[bits = 3]
 pub enum PayloadSize {
     Bytes8 = 0b000,

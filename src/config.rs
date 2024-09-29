@@ -2,6 +2,7 @@ use embedded_can::{Id, StandardId};
 use crate::registers::{PayloadSize, RetransmissionAttempts};
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Config {
     pub ecc_enabled: bool,
     pub txq_enabled: bool,
@@ -26,6 +27,7 @@ impl Default for Config {
     }
 }
 
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct FIFOConfig<const M: u8> {
     pub size: u8,
     pub payload_size: PayloadSize,
@@ -50,6 +52,7 @@ impl<const M: u8> FIFOConfig<M> {
     }
 }
 
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct FilterConfig<const M: u8, const RXFIFO: u8> {
     pub match_only_extended: bool,
     pub id: Id,
@@ -66,6 +69,7 @@ impl<const M: u8, const RXFIFO: u8> FilterConfig<M, RXFIFO> {
         }
     }
 }
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct MaskConfig<const M: u8> {
     pub match_id_type: bool,
     pub id: Id,
@@ -86,11 +90,13 @@ impl<const M: u8> MaskConfig<M> {
 }
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Clock {
     Clock20MHz,
     Clock40MHz,
 }
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum ArbitrationBitRate {
     Rate125K,
     Rate250K,
@@ -98,6 +104,7 @@ pub enum ArbitrationBitRate {
     Rate1000K,
 }
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum DataBitRate {
     Rate500K,
     Rate833K,
@@ -113,6 +120,7 @@ pub enum DataBitRate {
 }
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct BitRate {
     pub arbitration: ArbitrationBitRate,
     pub data: DataBitRate,
@@ -123,6 +131,7 @@ impl Default for BitRate {
     }
 }
 #[derive(Default)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub(crate) struct BitRateConfig {
     pub(crate) arbitration_brp: u8,
     pub(crate) arbitration_tseg1: u8,

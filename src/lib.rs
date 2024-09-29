@@ -313,6 +313,7 @@ impl<SPI: SpiDevice> MCP25xxFD<SPI> {
 
 /// SPI instructions supported by the CAN controller
 #[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum Instruction {
     /// Resets internal registers to the default state, sets Configuration mode.
@@ -350,6 +351,15 @@ impl<SPI: SpiDevice> Display for Error<SPI> {
             Error::SPIError(err) => err.fmt(f),
             Error::ControllerError(msg) => f.write_str(msg),
         }
+    }
+}
+#[cfg(feature = "defmt")]
+impl<SPI: SpiDevice> defmt::Format for Error<SPI> {
+    fn format(&self, fmt: defmt::Formatter) {
+        defmt::write!(fmt, "{}", match self {
+            Error::SPIError(_err) => "SPI error",
+            Error::ControllerError(msg) => msg,
+        })
     }
 }
 
