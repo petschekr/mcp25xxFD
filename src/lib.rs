@@ -292,9 +292,8 @@ impl<SPI: SpiDevice> MCP25xxFD<SPI> {
             // CAN Bus error
             interrupts.set_cerrif(false);
             self.write_register(interrupts).await?;
-            Err(Error::ControllerError("CAN Bus error!"))
         }
-        else if interrupts.rxif() {
+        if interrupts.rxif() {
             let rx_interrupts: ReceiveInterruptStatus = self.read_register().await?;
 
             let mut frame = None;
