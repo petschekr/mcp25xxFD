@@ -28,7 +28,7 @@ where
 }
 
 /// Data Length Code
-#[derive(BitfieldSpecifier, PartialEq, Eq, Copy, Clone, Debug)]
+#[derive(Specifier, PartialEq, Eq, Copy, Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[bits = 4]
 #[allow(non_camel_case_types)]
@@ -95,7 +95,7 @@ impl DataLengthCode {
 }
 
 #[bitfield(bits = 64)]
-#[derive(BitfieldSpecifier, Copy, Clone, Debug, Default)]
+#[derive(Specifier, Copy, Clone, Debug, Default)]
 pub struct TransmitMessageObjectHeader {
     /// Standard Identifier
     pub sid: B11,
@@ -123,7 +123,7 @@ pub struct TransmitMessageObjectHeader {
 }
 
 #[bitfield(bits = 64)]
-#[derive(BitfieldSpecifier, Copy, Clone, Debug, Default)]
+#[derive(Specifier, Copy, Clone, Debug, Default)]
 pub struct ReceiveMessageObjectHeader {
     /// Standard Identifier
     pub sid: B11,
@@ -153,7 +153,7 @@ pub struct ReceiveMessageObjectHeader {
 }
 
 /// Clock Output Divisor
-#[derive(BitfieldSpecifier, PartialEq, Eq, Copy, Clone, Debug)]
+#[derive(Specifier, PartialEq, Eq, Copy, Clone, Debug)]
 #[bits = 2]
 pub enum ClockOutputDivisor {
     DivideBy1 = 0b00,
@@ -163,7 +163,7 @@ pub enum ClockOutputDivisor {
 }
 
 /// System Clock Divisor
-#[derive(BitfieldSpecifier, PartialEq, Eq, Copy, Clone, Debug)]
+#[derive(Specifier, PartialEq, Eq, Copy, Clone, Debug)]
 #[bits = 1]
 pub enum ClockDivisor {
     DivideBy1 = 0b00,
@@ -171,7 +171,7 @@ pub enum ClockDivisor {
 }
 
 #[bitfield(bits = 32)]
-#[derive(BitfieldSpecifier, Copy, Clone, Debug, Default)]
+#[derive(Specifier, Copy, Clone, Debug, Default)]
 pub struct OscillatorControl {
     /// PLL enable
     pub pllen: bool,
@@ -203,7 +203,7 @@ impl RegisterAddress for OscillatorControl {
 }
 
 #[bitfield(bits = 32)]
-#[derive(BitfieldSpecifier, Copy, Clone, Debug, Default)]
+#[derive(Specifier, Copy, Clone, Debug, Default)]
 pub struct IOControl {
     /// GPIO0 Data Direction
     pub tris0: bool,
@@ -241,7 +241,7 @@ impl RegisterAddress for IOControl {
 }
 
 #[bitfield(bits = 32)]
-#[derive(BitfieldSpecifier, Copy, Clone, Debug, Default)]
+#[derive(Specifier, Copy, Clone, Debug, Default)]
 pub struct CRCStatus {
     /// CRC value from last CRC mismatch
     pub crc: u16,
@@ -261,7 +261,7 @@ impl RegisterAddress for CRCStatus {
 }
 
 #[bitfield(bits = 32)]
-#[derive(BitfieldSpecifier, Copy, Clone, Debug, Default)]
+#[derive(Specifier, Copy, Clone, Debug, Default)]
 pub struct ECCControl {
     /// ECC enable
     pub eccen: bool,
@@ -279,7 +279,7 @@ impl RegisterAddress for ECCControl {
 }
 
 #[bitfield(bits = 32)]
-#[derive(BitfieldSpecifier, Copy, Clone, Debug, Default)]
+#[derive(Specifier, Copy, Clone, Debug, Default)]
 pub struct ECCStatus {
     #[skip] __: B1,
     /// Single Error Detection Interrupt Flag
@@ -298,7 +298,7 @@ impl RegisterAddress for ECCStatus {
 }
 
 #[bitfield(bits = 32)]
-#[derive(BitfieldSpecifier, Copy, Clone, Debug, Default)]
+#[derive(Specifier, Copy, Clone, Debug, Default)]
 pub struct DeviceID {
     /// Silicon Revision
     #[skip(setters)]
@@ -313,7 +313,7 @@ impl RegisterAddress for DeviceID {
 }
 
 /// Request Operation mode
-#[derive(BitfieldSpecifier, PartialEq, Eq, Copy, Clone, Debug,)]
+#[derive(Specifier, PartialEq, Eq, Copy, Clone, Debug,)]
 #[bits = 3]
 pub enum OperationMode {
     Normal = 0b000,
@@ -327,7 +327,7 @@ pub enum OperationMode {
 }
 
 #[bitfield(bits = 32)]
-#[derive(BitfieldSpecifier, Copy, Clone, Debug, Default)]
+#[derive(Specifier, Copy, Clone, Debug, Default)]
 pub struct CANControl {
     /// Device Net Filter Bit Number
     pub dncnt: B5,
@@ -371,7 +371,7 @@ impl RegisterAddress for CANControl {
 }
 
 #[bitfield(bits = 32)]
-#[derive(BitfieldSpecifier, Copy, Clone, Debug, Default)]
+#[derive(Specifier, Copy, Clone, Debug, Default)]
 pub struct NominalBitTimeConfig {
     /// Synchronization Jump Width
     pub sjw: B7,
@@ -389,7 +389,7 @@ impl RegisterAddress for NominalBitTimeConfig {
 }
 
 #[bitfield(bits = 32)]
-#[derive(BitfieldSpecifier, Copy, Clone, Debug, Default)]
+#[derive(Specifier, Copy, Clone, Debug, Default)]
 pub struct DataBitTimeConfig {
     /// Synchronization Jump Width
     pub sjw: B4,
@@ -408,7 +408,7 @@ impl RegisterAddress for DataBitTimeConfig {
 }
 
 #[bitfield(bits = 32)]
-#[derive(BitfieldSpecifier, Copy, Clone, Debug, Default)]
+#[derive(Specifier, Copy, Clone, Debug, Default)]
 pub struct TransmitterDelayCompensation {
     /// Transmitter Delay Compensation Value bits; Secondary Sample Point (SSP)
     pub tdcv: B6,
@@ -430,7 +430,7 @@ impl RegisterAddress for TransmitterDelayCompensation {
 }
 
 #[bitfield(bits = 32)]
-#[derive(BitfieldSpecifier, Copy, Clone, Debug, Default)]
+#[derive(Specifier, Copy, Clone, Debug, Default)]
 pub struct TimeBaseCounter {
     /// Time Base Counter
     /// This is a free running timer that increments every TBCPRE clocks when TBCEN is set
@@ -441,7 +441,7 @@ impl RegisterAddress for TimeBaseCounter {
 }
 
 #[bitfield(bits = 32)]
-#[derive(BitfieldSpecifier, Copy, Clone, Debug, Default)]
+#[derive(Specifier, Copy, Clone, Debug, Default)]
 pub struct TimeStampControl {
     /// Time Base Counter Prescaler
     pub tbcpre: B10,
@@ -460,7 +460,7 @@ impl RegisterAddress for TimeStampControl {
 
 /// Interrupt Flag
 /// If multiple interrupts are pending, the interrupt with the highest number will be indicated
-#[derive(BitfieldSpecifier, PartialEq, Eq, Copy, Clone, Debug)]
+#[derive(Specifier, PartialEq, Eq, Copy, Clone, Debug)]
 #[bits = 7]
 pub enum InterruptFlag {
     TXQ = 0b0000000,
@@ -509,7 +509,7 @@ pub enum InterruptFlag {
 }
 
 #[bitfield(bits = 32)]
-#[derive(BitfieldSpecifier, Copy, Clone, Debug, Default)]
+#[derive(Specifier, Copy, Clone, Debug, Default)]
 pub struct InterruptCode {
     /// Interrupt Flag Code
     #[skip(setters)]
@@ -533,7 +533,7 @@ impl RegisterAddress for InterruptCode {
 }
 
 #[bitfield(bits = 32)]
-#[derive(BitfieldSpecifier, Copy, Clone, Debug, Default)]
+#[derive(Specifier, Copy, Clone, Debug, Default)]
 pub struct Interrupts {
     /// Transmit FIFO Interrupt Flag
     #[skip(setters)]
@@ -602,7 +602,7 @@ impl RegisterAddress for Interrupts {
 }
 
 #[bitfield(bits = 32)]
-#[derive(BitfieldSpecifier, Copy, Clone, Debug, Default)]
+#[derive(Specifier, Copy, Clone, Debug, Default)]
 pub struct ReceiveInterruptStatus {
     #[skip] __: B1,
     /// Receive FIFO Interrupt Pending
@@ -674,7 +674,7 @@ impl RegisterAddress for ReceiveInterruptStatus {
 }
 
 #[bitfield(bits = 32)]
-#[derive(BitfieldSpecifier, Copy, Clone, Debug, Default)]
+#[derive(Specifier, Copy, Clone, Debug, Default)]
 pub struct ReceiveOverflowInterruptStatus {
     #[skip] __: B1,
     /// Receive FIFO Overflow Interrupt Pending
@@ -686,7 +686,7 @@ impl RegisterAddress for ReceiveOverflowInterruptStatus {
 }
 
 #[bitfield(bits = 32)]
-#[derive(BitfieldSpecifier, Copy, Clone, Debug, Default)]
+#[derive(Specifier, Copy, Clone, Debug, Default)]
 pub struct TransmitInterruptStatus {
     /// TXQ Interrupt Pending
     #[skip(setters)]
@@ -701,7 +701,7 @@ impl RegisterAddress for TransmitInterruptStatus {
 }
 
 #[bitfield(bits = 32)]
-#[derive(BitfieldSpecifier, Copy, Clone, Debug, Default)]
+#[derive(Specifier, Copy, Clone, Debug, Default)]
 pub struct TransmitAttemptInterruptStatus {
     /// TXQ Attempt Interrupt Pending
     #[skip(setters)]
@@ -716,7 +716,7 @@ impl RegisterAddress for TransmitAttemptInterruptStatus {
 }
 
 #[bitfield(bits = 32)]
-#[derive(BitfieldSpecifier, Copy, Clone, Debug, Default)]
+#[derive(Specifier, Copy, Clone, Debug, Default)]
 pub struct TransmitRequest {
     /// Transmit Queue Message Send Request
     /// Will automatically clear when the message(s) queued is/are successfully sent
@@ -790,7 +790,7 @@ impl RegisterAddress for TransmitRequest {
 }
 
 #[bitfield(bits = 32)]
-#[derive(BitfieldSpecifier, Copy, Clone, Debug, Default)]
+#[derive(Specifier, Copy, Clone, Debug, Default)]
 pub struct TransmitReceiveErrorCount {
     /// Receive Error Counter
     #[skip(setters)]
@@ -823,7 +823,7 @@ impl RegisterAddress for TransmitReceiveErrorCount {
 }
 
 #[bitfield(bits = 32)]
-#[derive(BitfieldSpecifier, Copy, Clone, Debug, Default)]
+#[derive(Specifier, Copy, Clone, Debug, Default)]
 pub struct BusDiagnostic0 {
     /// Nominal Bit Rate Receive Error Counter
     pub nrerrcnt: u8,
@@ -839,7 +839,7 @@ impl RegisterAddress for BusDiagnostic0 {
 }
 
 #[bitfield(bits = 32)]
-#[derive(BitfieldSpecifier, Copy, Clone, Debug, Default)]
+#[derive(Specifier, Copy, Clone, Debug, Default)]
 pub struct BusDiagnostic1 {
     /// Error-free Message Counter
     pub efmsgcnt: u16,
@@ -881,7 +881,7 @@ impl RegisterAddress for BusDiagnostic1 {
 }
 
 #[bitfield(bits = 32)]
-#[derive(BitfieldSpecifier, Copy, Clone, Debug, Default)]
+#[derive(Specifier, Copy, Clone, Debug, Default)]
 pub struct TransmitEventFIFOControl {
     /// Transmit Event FIFO Not Empty Interrupt Enable
     pub tefneie: bool,
@@ -912,7 +912,7 @@ impl RegisterAddress for TransmitEventFIFOControl {
 }
 
 #[bitfield(bits = 32)]
-#[derive(BitfieldSpecifier, Copy, Clone, Debug, Default)]
+#[derive(Specifier, Copy, Clone, Debug, Default)]
 pub struct TransmitEventFIFOStatus {
     /// Transmit Event FIFO Not Empty Interrupt Flag
     #[skip(setters)]
@@ -933,7 +933,7 @@ impl RegisterAddress for TransmitEventFIFOStatus {
 }
 
 #[bitfield(bits = 32)]
-#[derive(BitfieldSpecifier, Copy, Clone, Debug, Default)]
+#[derive(Specifier, Copy, Clone, Debug, Default)]
 pub struct TransmitEventFIFOUserAddress {
     /// Transmit Event FIFO User Address
     /// The address where the next object is to be read (FIFO tail)
@@ -944,7 +944,7 @@ impl RegisterAddress for TransmitEventFIFOUserAddress {
     const ADDRESS: u16 = 0x048;
 }
 
-#[derive(BitfieldSpecifier, PartialEq, Eq, Copy, Clone, Debug)]
+#[derive(Specifier, PartialEq, Eq, Copy, Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[bits = 2]
 pub enum RetransmissionAttempts {
@@ -954,7 +954,7 @@ pub enum RetransmissionAttempts {
     Unlimited2 = 0b11,
 }
 
-#[derive(BitfieldSpecifier, PartialEq, Eq, Copy, Clone, Debug)]
+#[derive(Specifier, PartialEq, Eq, Copy, Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[bits = 3]
 pub enum PayloadSize {
@@ -970,7 +970,7 @@ pub enum PayloadSize {
 
 
 #[bitfield(bits = 32)]
-#[derive(BitfieldSpecifier, Copy, Clone, Debug, Default)]
+#[derive(Specifier, Copy, Clone, Debug, Default)]
 pub struct TransmitQueueControl {
     /// Transmit Queue Not Full Interrupt Enable
     pub txqnie: bool,
@@ -1007,7 +1007,7 @@ impl RegisterAddress for TransmitQueueControl {
 }
 
 #[bitfield(bits = 32)]
-#[derive(BitfieldSpecifier, Copy, Clone, Debug, Default)]
+#[derive(Specifier, Copy, Clone, Debug, Default)]
 pub struct TransmitQueueStatus {
     /// Transmit Queue Not Full Interrupt Flag
     #[skip(setters)]
@@ -1036,7 +1036,7 @@ impl RegisterAddress for TransmitQueueStatus {
 }
 
 #[bitfield(bits = 32)]
-#[derive(BitfieldSpecifier, Copy, Clone, Debug, Default)]
+#[derive(Specifier, Copy, Clone, Debug, Default)]
 pub struct TransmitQueueUserAddress {
     /// TXQ User Address
     /// The address where the next message is to be written (TXQ head)
@@ -1048,7 +1048,7 @@ impl RegisterAddress for TransmitQueueUserAddress {
 }
 
 #[bitfield(bits = 32)]
-#[derive(BitfieldSpecifier, Copy, Clone, Debug, Default)]
+#[derive(Specifier, Copy, Clone, Debug, Default)]
 pub struct FIFOControlM {
     /// Transmit/Receive FIFO Not Full/Not Empty Interrupt Enable
     pub tfnrfnie: bool,
@@ -1102,7 +1102,7 @@ impl<const M: u8> Register for FIFOControl<M> {
 }
 
 #[bitfield(bits = 32)]
-#[derive(BitfieldSpecifier, Copy, Clone, Debug, Default)]
+#[derive(Specifier, Copy, Clone, Debug, Default)]
 pub struct FIFOStatusM {
     /// Transmit/Receive FIFO Not Full/Not Empty Interrupt Flag
     #[skip(setters)]
@@ -1145,7 +1145,7 @@ impl<const M: u8> Register for FIFOStatus<M> {
 }
 
 #[bitfield(bits = 32)]
-#[derive(BitfieldSpecifier, Copy, Clone, Debug, Default)]
+#[derive(Specifier, Copy, Clone, Debug, Default)]
 pub struct FIFOUserAddressM {
     /// FIFO User Address
     /// The address where the next message is to be written (FIFO head)
@@ -1170,7 +1170,7 @@ impl<const M: u8> Register for FIFOUserAddress<M> {
 }
 
 #[bitfield(bits = 32)]
-#[derive(BitfieldSpecifier, Copy, Clone, Debug, Default)]
+#[derive(Specifier, Copy, Clone, Debug, Default)]
 pub struct FilterControlM {
     /// Pointer to FIFO when Filter 0 hits
     pub f0bp: B5,
@@ -1210,7 +1210,7 @@ impl<const M: u8> Register for FilterControl<M> {
 }
 
 #[bitfield(bits = 32)]
-#[derive(BitfieldSpecifier, Copy, Clone, Debug, Default)]
+#[derive(Specifier, Copy, Clone, Debug, Default)]
 pub struct FilterObjectM {
     /// Standard Identifier filter
     pub sid: B11,
@@ -1239,7 +1239,7 @@ impl<const M: u8> Register for FilterObject<M> {
 }
 
 #[bitfield(bits = 32)]
-#[derive(BitfieldSpecifier, Copy, Clone, Debug, Default)]
+#[derive(Specifier, Copy, Clone, Debug, Default)]
 pub struct MaskM {
     /// Standard Identifier mask
     pub msid: B11,

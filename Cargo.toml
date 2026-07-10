@@ -2,7 +2,7 @@
 name = "mcp25xxfd"
 description = "MCP2518FD and MCP251863 CAN-FD controller library"
 version = "0.2.0"
-edition = "2021"
+edition = "2024"
 repository = "https://github.com/petschekr/mcp25xxFD"
 license = "MIT OR Apache-2.0"
 categories = [
@@ -21,9 +21,9 @@ keywords = [
 [dependencies]
 embedded-hal = "1.0"
 embedded-hal-async = "1.0"
-embedded-can = { git = "https://github.com/rust-embedded/embedded-hal.git", features = ["defmt-03"]}
-modular-bitfield = "0.11.2"
-defmt = { version = "0.3", optional = true }
+embedded-can = { git = "https://github.com/rust-embedded/embedded-hal.git", features = ["defmt"]}
+modular-bitfield = "0.13"
+defmt = { version = "1.1", optional = true }
 
 [features]
 defmt = ["dep:defmt"]
