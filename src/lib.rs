@@ -216,7 +216,14 @@ impl<SPI: SpiDevice> MCP25xxFD<SPI> {
             return Err(Error::ControllerError("No room in TX FIFO!"));
         }
 
-        let (header, data) = frame.as_components();
+        let (header, mut data) = frame.as_components();
+
+        // Ensure that data is word aligned (multiple of 4 bytes)
+        let mut data_scratch = [0u8; 8]; // The only DLCs that are not word-aligned are less than 8 bytes
+        if data.len() % 4 != 0 && data.len() <= 8 {
+            data_scratch[..data.len()].copy_from_slice(data);
+            data = &data_scratch;
+        }
 
         let tx_addr = self.read_register::<FIFOUserAddress<M>>().await?
             .contents
