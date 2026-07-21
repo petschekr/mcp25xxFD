@@ -69,7 +69,7 @@ impl<SPI: SpiDevice> MCP25xxFD<SPI> {
         let mut interrupt_config: Interrupts = self.read_register().await?;
         interrupt_config.set_txie(false);
         interrupt_config.set_rxie(true);
-        interrupt_config.set_cerrie(true);
+        interrupt_config.set_cerrie(false);
         self.write_register(interrupt_config).await?;
 
         Ok(())
@@ -125,7 +125,7 @@ impl<SPI: SpiDevice> MCP25xxFD<SPI> {
 
         // Enable the filter
         let filter_control_address = FilterControl::<0>::ADDRESS + (M as u16);
-        self.write_register_byte(filter_control_address,(1 << 7) | RXFIFO).await?;
+        self.write_register_byte(filter_control_address, (1 << 7) | RXFIFO).await?;
 
         Ok(())
     }
@@ -294,12 +294,7 @@ impl<SPI: SpiDevice> MCP25xxFD<SPI> {
     }
 
     pub async fn receive(&mut self, fifo_restriction: Option<u8>) -> Result<Option<(u8, Frame)>, Error<SPI>> {
-        let mut interrupts: Interrupts = self.read_register().await?;
-        if interrupts.cerrif() {
-            // CAN Bus error
-            interrupts.set_cerrif(false);
-            self.write_register(interrupts).await?;
-        }
+        let interrupts: Interrupts = self.read_register().await?;
         if interrupts.rxif() {
             let rx_interrupts: ReceiveInterruptStatus = self.read_register().await?;
 

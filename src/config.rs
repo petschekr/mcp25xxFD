@@ -20,7 +20,7 @@ impl Default for Config {
             txq_enabled: false,
             tx_event_fifo_enabled: false,
             iso_crc_enabled: true,
-            restrict_retx_attempts: false,
+            restrict_retx_attempts: true,
             bit_rate: BitRate::default(),
             clock: Clock::Clock40MHz,
         }
@@ -41,7 +41,7 @@ impl<const M: u8> FIFOConfig<M> {
             size,
             payload_size,
             transmit: false,
-            tx_attempts: RetransmissionAttempts::Unlimited1,
+            tx_attempts: RetransmissionAttempts::Three,
             priority: 0,
         }
     }
