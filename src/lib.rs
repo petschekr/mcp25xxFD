@@ -90,6 +90,21 @@ impl<SPI: SpiDevice> MCP25xxFD<SPI> {
         Ok(())
     }
 
+    pub async fn reset_fifo<const M: u8>(&mut self) -> Result<(), Error<SPI>> {
+        let mut tx_control: FIFOControl<M> = self.read_register().await?;
+        tx_control.contents.set_freset(true);
+        self.write_register(tx_control).await?;
+
+        let mut counter: u8 = 0;
+        while self.read_register::<FIFOControl<M>>().await?.contents.freset() {
+            counter += 1;
+            if counter >= 100 {
+                return Err(Error::ControllerError("FIFO reset never acknowledged"));
+            }
+        }
+        Ok(())
+    }
+
     pub async fn configure_filter<const M: u8, const RXFIFO: u8>(&mut self, filter: FilterConfig<M, RXFIFO>, mask: MaskConfig<M>) -> Result<(), Error<SPI>> {
         // Set up the filter configuration
         let mut filter_object = FilterObject::<M>::from_bitfield(FilterObjectM::new());
